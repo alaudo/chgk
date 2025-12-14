@@ -1,4 +1,3 @@
-
 name: Azure Static Web Apps CI/CD
 
 on:
@@ -10,37 +9,29 @@ on:
 
 jobs:
   build_and_deploy_job:
-    # Fix the HTML entity and keep a simple condition
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
 
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
+      # REMOVED: Azure Login step is not needed when using the deployment token
+      
       - name: Upload static files (no build)
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           action: "upload"
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-
-          # Publish files from the repo root as-is
-          app_location: "/"      # directory containing your static site
-          api_location: ""       # no API
-          output_location: ""    # no build -> publish app_location directly
+          
+          # Configuration for "No Build" (Raw HTML/CSS/JS)
+          app_location: "/"      # The root of your repo
+          api_location: ""       # No API
+          output_location: "."   # Important: Points to the same folder as app_location
+          skip_app_build: true   # Explicitly tells Azure not to look for package.json or build scripts
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
