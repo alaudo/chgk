@@ -17,8 +17,6 @@ jobs:
         with:
           submodules: true
           lfs: false
-
-      # REMOVED: Azure Login step is not needed when using the deployment token
       
       - name: Upload static files (no build)
         id: builddeploy
@@ -30,7 +28,7 @@ jobs:
           # Configuration for "No Build" (Raw HTML/CSS/JS)
           app_location: "/"      # The root of your repo
           api_location: ""       # No API
-          output_location: "."   # Important: Points to the same folder as app_location
+          output_location: "/"   # Important: Points to the same folder as app_location
           skip_app_build: true   # Explicitly tells Azure not to look for package.json or build scripts
 
   close_pull_request_job:
