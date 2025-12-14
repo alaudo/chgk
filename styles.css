@@ -46,10 +46,40 @@ body {
   margin-bottom: 30px;
 }
 
+.header {
+  position: relative;
+}
+
 .header h1 {
   font-size: 2.5rem;
   margin-bottom: 10px;
   color: var(--primary-color);
+}
+
+.help-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.help-btn:hover {
+  background: #1d4ed8;
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .subtitle {
@@ -1718,6 +1748,64 @@ body {
 
 #restartTimerBtn {
   color: white !important;
+}
+
+/* Help Modal */
+.help-modal-content {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.help-modal-body {
+  padding: 20px;
+}
+
+.help-section {
+  margin-bottom: 30px;
+}
+
+.help-section h3 {
+  color: var(--primary-color);
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 8px;
+}
+
+.help-section h4 {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.help-section p {
+  margin-bottom: 10px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.help-section ul {
+  margin-left: 20px;
+  margin-bottom: 15px;
+}
+
+.help-section li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.help-section li ul {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.help-section strong {
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 /* Question Column Highlighting */

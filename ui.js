@@ -1822,6 +1822,15 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Help modal functions
+function openHelp() {
+  document.getElementById('helpModal').style.display = 'flex';
+}
+
+function closeHelp() {
+  document.getElementById('helpModal').style.display = 'none';
+}
+
 // Expose timer functions globally for onclick handlers
 window.closeQuestionTimer = closeQuestionTimer;
 window.startTimer = startTimer;
@@ -1831,3 +1840,5 @@ window.nextQuestionNow = nextQuestionNow;
 window.toggleTimerQuestion = toggleTimerQuestion;
 window.updateTimerSetting = updateTimerSetting;
 window.highlightQuestionColumn = highlightQuestionColumn;
+window.openHelp = openHelp;
+window.closeHelp = closeHelp;
