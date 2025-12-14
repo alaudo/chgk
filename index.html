@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ЧГК: Перемешка</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>🦉 ЧГК: Перемешка</h1>
+      <p class="subtitle">Генератор случайных команд и учёта очков</p>
+    </header>
+
+    <!-- Warning Container -->
+    <div id="warningContainer" class="warning-container"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      
+      <!-- Players Section -->
+      <section class="section" id="playersSection">
+        <div class="section-header">
+          <h2>Игроки</h2>
+          <button class="collapse-btn" onclick="toggleSection('playersSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div class="player-input">
+            <input 
+              type="text" 
+              id="playerNameInput" 
+              placeholder="Имя игрока" 
+              class="input">
+            <label class="checkbox-label">
+              <input type="checkbox" id="isCaptainCheck">
+              Капитан
+            </label>
+            <input 
+              type="text" 
+              id="teamNameInput" 
+              placeholder="Название команды (опционально)" 
+              class="input input-small">
+            <button id="addPlayerBtn" class="btn btn-primary">Добавить</button>
+          </div>
+          <div id="playersList" class="players-list"></div>
+        </div>
+      </section>
+
+      <!-- Game Section -->
+      <section class="section" id="gameSection">
+        <div class="section-header">
+          <h2>🎮 Игра</h2>
+          <button class="collapse-btn" onclick="toggleSection('gameSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div class="settings-row">
+            <label for="questionsPerRound">Вопросов в туре:</label>
+            <input type="number" id="questionsPerRound" min="1" max="50" value="12" class="input-small">
+          </div>
+          <div class="settings-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="allowManualMove">
+              Разрешить перемещение игроков вручную
+            </label>
+          </div>
+          <div id="gameInfo" class="game-info"></div>
+          <div id="gameControls" class="actions">
+            <div class="game-presets">
+              <p class="presets-label">Быстрая настройка:</p>
+              <div class="preset-buttons">
+                <button class="btn btn-secondary btn-small" onclick="setGamePreset(3, 12)">3 тура × 12 вопросов</button>
+                <button class="btn btn-secondary btn-small" onclick="setGamePreset(6, 6)">6 туров × 6 вопросов</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <label for="gameRoundsInput">Туров в игре:</label>
+              <input type="number" id="gameRoundsInput" min="1" max="50" value="5" class="input-small">
+            </div>
+            <button id="startGameBtn" class="btn btn-primary">Начать новую игру</button>
+          </div>
+          <div class="actions" style="margin-top: 1rem;">
+            <button id="generateTeamsBtn" class="btn btn-primary">Создать новые команды</button>
+            <button id="reshuffleBtn" class="btn btn-secondary">Перемешать</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Current Round Section -->
+      <section id="currentRoundSection" class="section">
+        <div class="section-header">
+          <h2 id="currentRoundTitle">Текущий тур</h2>
+          <button class="collapse-btn" onclick="toggleSection('currentRoundSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div class="round-header-bar">
+            <div class="round-header-actions">
+              <button id="reshuffleCurrentBtn" class="btn btn-secondary btn-small" style="display: none;">🔀 Перемешать текущий тур</button>
+              <button id="addUnassignedPlayersBtn" class="btn btn-secondary btn-small" style="display: none;">➕ Добавить неназначенных</button>
+              <button id="questionTimerBtn" class="btn btn-primary btn-small" style="display: none;">⏱️ Вопрос</button>
+            </div>
+            <div class="view-switcher">
+              <button id="viewTeamsBtn" class="btn btn-secondary active">Составы</button>
+              <button id="viewScoringBtn" class="btn btn-secondary">Очки</button>
+            </div>
+          </div>
+          <div id="currentRoundContainer" class="current-round-container"></div>
+          <div class="actions" id="roundActions">
+            <button id="finalizeRoundBtn" class="btn btn-success">Завершить тур</button>
+            <button id="saveEditedRoundBtn" class="btn btn-success" style="display: none;">Сохранить изменения</button>
+            <button id="cancelEditRoundBtn" class="btn btn-secondary" style="display: none;">Отмена</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rounds History -->
+      <section class="section" id="historySection">
+        <div class="section-header">
+          <h2>История туров</h2>
+          <button class="collapse-btn" onclick="toggleSection('historySection')">−</button>
+        </div>
+        <div class="section-body">
+          <div id="roundsHistory" class="rounds-history"></div>
+        </div>
+      </section>
+
+      <!-- Leaderboard -->
+      <section class="section" id="leaderboardSection">
+        <div class="section-header">
+          <h2>📊 Результаты</h2>
+          <button class="collapse-btn" onclick="toggleSection('leaderboardSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div class="leaderboard-tabs">
+            <button id="playersTabBtn" class="tab-btn active" onclick="switchLeaderboardTab('players')">Игроки</button>
+            <button id="teamsTabBtn" class="tab-btn" onclick="switchLeaderboardTab('teams')">Команды</button>
+            <button id="drawTabBtn" class="tab-btn" onclick="switchLeaderboardTab('draw')">Жеребьёвка</button>
+          </div>
+          <div id="leaderboard" class="leaderboard"></div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="section" id="actionsSection">
+        <div class="section-header">
+          <h2>Действия</h2>
+          <button class="collapse-btn" onclick="toggleSection('actionsSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div class="actions">
+            <button id="undoBtn" class="btn btn-secondary">Отменить последний тур</button>
+            <button id="resetGameBtn" class="btn btn-warning">Сбросить туры (оставить игроков)</button>
+            <button id="exportBtn" class="btn btn-secondary">Экспорт</button>
+            <button id="importBtn" class="btn btn-secondary">Импорт</button>
+            <button id="resetBtn" class="btn btn-danger">Полный сброс</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Team Shuffle & Ratings v1.0 | Data stored in browser localStorage</p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="storage.js"></script>
+  <script src="algorithms.js"></script>
+  <script src="app.js"></script>
+  <script src="ui.js"></script>
+  <script>
+    // Initialize app on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      appState.init();
+      document.getElementById('questionsPerRound').value = appState.settings.questionsPerRound || 12;
+      document.getElementById('gameRoundsInput').value = appState.settings.gameRounds || 5;
+      initUI();
+    });
+  </script>
+</body>
+</html>
