@@ -671,6 +671,13 @@ function closePlayerStats() {
 // Global ESC key handler for closing modals
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // Close help modal first (highest priority)
+    const helpModal = document.getElementById('helpModal');
+    if (helpModal && helpModal.style.display !== 'none') {
+      closeHelp();
+      return;
+    }
+    
     closePlayerStats();
     closeTeamStats();
     // Ask for confirmation if timer is running or has been started
