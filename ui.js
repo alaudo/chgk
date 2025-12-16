@@ -123,6 +123,16 @@ function renderGameInfo() {
 function updateCurrentRoundTitle() {
   const title = document.getElementById('currentRoundTitle');
   if (!title) return;
+
+  if (appState.editingRoundId) {
+    const editingRound = appState.rounds.find(r => r.id === appState.editingRoundId);
+    if (editingRound) {
+      title.textContent = `Редактирование тура ${editingRound.index}`;
+    } else {
+      title.textContent = 'Редактирование тура';
+    }
+    return;
+  }
   
   if (appState.currentRoundId) {
     const progress = appState.getGameProgress();
@@ -857,16 +867,16 @@ function updateActionButtons() {
   const addUnassignedBtn = document.getElementById('addUnassignedPlayersBtn');
   
   if (reshuffleCurrentBtn) {
-    reshuffleCurrentBtn.style.display = hasActiveRound ? 'inline-block' : 'none';
+    reshuffleCurrentBtn.style.display = (hasActiveRound && !isEditingRound) ? 'inline-block' : 'none';
   }
   
   if (addUnassignedBtn) {
-    addUnassignedBtn.style.display = (isGameMode && hasActiveRound) ? 'inline-block' : 'none';
+    addUnassignedBtn.style.display = (isGameMode && hasActiveRound && !isEditingRound) ? 'inline-block' : 'none';
   }
   
   const questionTimerBtn = document.getElementById('questionTimerBtn');
   if (questionTimerBtn) {
-    questionTimerBtn.style.display = hasActiveRound ? 'inline-block' : 'none';
+    questionTimerBtn.style.display = (hasActiveRound && !isEditingRound) ? 'inline-block' : 'none';
   }
 }
 
@@ -1447,13 +1457,7 @@ function handleSettingsChange() {
 function editRoundFromHistory(roundId) {
   try {
     appState.editRound(roundId);
-    appState.currentView = 'scoring'; // Ensure we're in scoring view
     render();
-    // Force focus on the scoring view
-    setTimeout(() => {
-      const scoringBtn = document.getElementById('viewScoringBtn');
-      if (scoringBtn) scoringBtn.click();
-    }, 100);
     showWarning('Editing round. Make changes and click Save.', 'info');
   } catch (error) {
     showWarning(error.message);

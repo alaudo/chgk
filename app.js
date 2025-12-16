@@ -27,6 +27,10 @@ class AppState {
     this.currentGameRoundIndex = 0; // Which round in the game we're on
     // Question timer state
     this.currentQuestionNumber = 1;
+
+    // When editing a past round while another round is in progress,
+    // keep enough context to restore the active round afterwards.
+    this.suspendedRoundState = null;
   }
 
   getPersistableState() {
@@ -699,13 +703,30 @@ class AppState {
       throw new Error('Round not found');
     }
 
+    if (this.editingRoundId) {
+      throw new Error('Already editing a round');
+    }
+
     // Save snapshot before editing
     this.undoSnapshot = {
       players: JSON.parse(JSON.stringify(this.players)),
       round: JSON.parse(JSON.stringify(round))
     };
 
+    // If there is an active in-progress round, temporarily suspend it.
+    // We switch the "current" round context to the edited round so scoring UI updates
+    // (checkboxes) operate on the edited round.
+    if (this.currentRoundId && this.currentRoundId !== roundId) {
+      this.suspendedRoundState = {
+        currentRoundId: this.currentRoundId,
+        currentView: this.currentView
+      };
+    } else {
+      this.suspendedRoundState = null;
+    }
+
     this.editingRoundId = roundId;
+    this.currentRoundId = roundId;
     this.currentView = 'scoring';
     this.save();
   }
@@ -742,6 +763,13 @@ class AppState {
 
     this.editingRoundId = null;
     this.undoSnapshot = null;
+
+    // Restore the suspended active round (if any)
+    if (this.suspendedRoundState && this.suspendedRoundState.currentRoundId) {
+      this.currentRoundId = this.suspendedRoundState.currentRoundId;
+      this.currentView = this.suspendedRoundState.currentView || this.currentView;
+    }
+    this.suspendedRoundState = null;
     this.save();
   }
 
@@ -759,6 +787,13 @@ class AppState {
     }
     this.editingRoundId = null;
     this.undoSnapshot = null;
+
+    // Restore the suspended active round (if any)
+    if (this.suspendedRoundState && this.suspendedRoundState.currentRoundId) {
+      this.currentRoundId = this.suspendedRoundState.currentRoundId;
+      this.currentView = this.suspendedRoundState.currentView || this.currentView;
+    }
+    this.suspendedRoundState = null;
     this.save();
   }
 
