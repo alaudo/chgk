@@ -482,12 +482,29 @@
     // Initialize app on page load
     document.addEventListener('DOMContentLoaded', () => {
       appState.init();
+      
+      // Restore form values
       document.getElementById('questionsPerRound').value = appState.settings.questionsPerRound || 12;
       document.getElementById('gameRoundsInput').value = appState.settings.gameRounds || 5;
+      
+      // Restore checkbox states
       if (document.getElementById('hideCaptainsCheck')) {
         document.getElementById('hideCaptainsCheck').checked = appState.settings.hideCaptains || false;
       }
+      if (document.getElementById('allowManualMove')) {
+        document.getElementById('allowManualMove').checked = appState.uiState.allowManualMove || false;
+      }
+      
       initUI();
+    });
+
+    // Flush debounced saves when the user reloads/navigates away.
+    window.addEventListener('beforeunload', () => {
+      try {
+        appState.saveImmediate();
+      } catch (e) {
+        // ignore
+      }
     });
   </script>
 </body>

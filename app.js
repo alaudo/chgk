@@ -14,6 +14,12 @@ class AppState {
       gameRounds: 5,
       hideCaptains: false
     };
+    // UI state for persistence
+    this.uiState = {
+      leaderboardTab: 'players',
+      leaderboardSort: { by: 'correctAnswers', direction: 'desc' },
+      allowManualMove: false
+    };
     this.undoSnapshot = null;
     // Game mode state
     this.gameId = null;
@@ -21,6 +27,22 @@ class AppState {
     this.currentGameRoundIndex = 0; // Which round in the game we're on
     // Question timer state
     this.currentQuestionNumber = 1;
+  }
+
+  getPersistableState() {
+    return {
+      players: this.players,
+      rounds: this.rounds,
+      settings: this.settings,
+      gameId: this.gameId,
+      gameRounds: this.gameRounds,
+      currentGameRoundIndex: this.currentGameRoundIndex,
+      currentQuestionNumber: this.currentQuestionNumber,
+      currentView: this.currentView,
+      currentRoundId: this.currentRoundId,
+      editingRoundId: this.editingRoundId,
+      uiState: this.uiState
+    };
   }
 
   /**
@@ -41,6 +63,45 @@ class AppState {
     this.gameRounds = saved.gameRounds || [];
     this.currentGameRoundIndex = saved.currentGameRoundIndex || 0;
     this.currentQuestionNumber = saved.currentQuestionNumber || 1;
+    this.currentView = saved.currentView || 'teams';
+    this.currentRoundId = saved.currentRoundId || null;
+    this.editingRoundId = saved.editingRoundId || null;
+    this.uiState = {
+      leaderboardTab: 'players',
+      leaderboardSort: { by: 'correctAnswers', direction: 'desc' },
+      allowManualMove: false,
+      ...saved.uiState
+    };
+    
+    // Restore active game state if there's an ongoing game
+    if (this.gameId && this.gameRounds.length > 0) {
+      this.restoreActiveGameState();
+    }
+
+    // Legacy fallback: if we have rounds but no active round ID, assume the last round is active.
+    if (!this.currentRoundId && Array.isArray(this.rounds) && this.rounds.length > 0) {
+      const lastRound = this.rounds[this.rounds.length - 1];
+      if (lastRound && lastRound.id) {
+        this.currentRoundId = lastRound.id;
+      }
+    }
+    
+    // Ensure we have a consistent state after loading
+    if (this.currentRoundId) {
+      const round = this.rounds.find(r => r.id === this.currentRoundId);
+      if (round) {
+        // We have an active round, make sure we're ready to display it
+        this.ensureRoundQuestionsInitialized(round);
+      } else if (this.isGameMode()) {
+        // Current round ID exists but round not found - this shouldn't happen after restoration
+        console.warn('Current round ID exists but round not found in rounds array');
+        // Try to restore it one more time
+        this.restoreActiveGameState();
+      }
+    }
+    
+    // Sync game rounds with completed rounds for proper display
+    this.syncGameRoundsWithCompletedRounds();
     
     // Migrate old player data
     this.players.forEach(player => {
@@ -60,14 +121,94 @@ class AppState {
    * Save state to storage
    */
   save() {
-    saveStateDebounced({
-      players: this.players,
-      rounds: this.rounds,
-      settings: this.settings,
-      gameId: this.gameId,
-      gameRounds: this.gameRounds,
-      currentGameRoundIndex: this.currentGameRoundIndex,
-      currentQuestionNumber: this.currentQuestionNumber
+    saveStateDebounced(this.getPersistableState());
+  }
+
+  saveImmediate() {
+    saveStateImmediate(this.getPersistableState());
+  }
+
+  /**
+   * Restore active game state after loading from storage
+   */
+  restoreActiveGameState() {
+    // Ensure all completed game rounds (up to current index) are in the rounds array
+    if (this.gameRounds.length > 0) {
+      for (let i = 0; i <= this.currentGameRoundIndex && i < this.gameRounds.length; i++) {
+        const gameRound = this.gameRounds[i];
+        if (gameRound) {
+          // Check if this round exists in rounds array
+          const existingRound = this.rounds.find(r => r.id === gameRound.id);
+          if (!existingRound) {
+            // Round not in rounds array, add it
+            this.ensureRoundQuestionsInitialized(gameRound);
+            this.rounds.push(gameRound);
+          } else {
+            // Round exists, ensure it has the latest state from gameRounds
+            // but preserve any question progress that was saved
+            this.ensureRoundQuestionsInitialized(existingRound);
+          }
+        }
+      }
+      
+      // Always ensure current round ID is set correctly for the current game round index
+      if (this.currentGameRoundIndex < this.gameRounds.length) {
+        const currentGameRound = this.gameRounds[this.currentGameRoundIndex];
+        if (currentGameRound) {
+          // Verify the current round ID matches the current game round
+          if (this.currentRoundId !== currentGameRound.id) {
+            this.currentRoundId = currentGameRound.id;
+          }
+          
+          // Ensure this round is in the rounds array
+          const currentRound = this.rounds.find(r => r.id === this.currentRoundId);
+          if (!currentRound) {
+            this.ensureRoundQuestionsInitialized(currentGameRound);
+            this.rounds.push(currentGameRound);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Sync game rounds with completed rounds to ensure draw table shows current progress
+   */
+  syncGameRoundsWithCompletedRounds() {
+    if (!this.isGameMode()) return;
+    
+    // Update gameRounds with any progress from completed rounds
+    this.gameRounds.forEach((gameRound, index) => {
+      const completedRound = this.rounds.find(r => r.id === gameRound.id);
+      if (completedRound) {
+        // Preserve the original game round structure but update with completed data
+        gameRound.questions = completedRound.questions || gameRound.questions;
+        gameRound.scores = completedRound.scores || gameRound.scores;
+      }
+    });
+  }
+
+  /**
+   * Ensure round has properly initialized questions object
+   */
+  ensureRoundQuestionsInitialized(round) {
+    if (!round.questions) {
+      round.questions = {};
+    }
+    if (!round.scores) {
+      round.scores = {};
+    }
+    
+    const questionsPerRound = round.questionsCount || this.settings.questionsPerRound;
+    
+    // Initialize questions for each team if not already done
+    round.teams.forEach(team => {
+      if (!round.questions[team.id]) {
+        round.questions[team.id] = new Array(questionsPerRound).fill(false);
+      }
+      if (!round.scores[team.id]) {
+        round.scores[team.id] = 0;
+      }
     });
   }
 
@@ -294,6 +435,16 @@ class AppState {
     }
 
     round.questions[teamId] = questions;
+    
+    // Also update the corresponding game round if in game mode
+    if (this.isGameMode()) {
+      const gameRound = this.gameRounds.find(r => r.id === this.currentRoundId);
+      if (gameRound) {
+        if (!gameRound.questions) gameRound.questions = {};
+        gameRound.questions[teamId] = questions;
+      }
+    }
+    
     this.save();
   }
 
@@ -506,12 +657,16 @@ class AppState {
     
     // If in game mode, advance to next round
     if (this.isGameMode()) {
+      // Sync current round progress before advancing
+      this.syncGameRoundsWithCompletedRounds();
+      
       this.currentGameRoundIndex++;
       
       if (this.currentGameRoundIndex < this.gameRounds.length) {
         // Load next pre-generated round
         const nextRound = this.gameRounds[this.currentGameRoundIndex];
         this.currentRoundId = nextRound.id;
+        this.ensureRoundQuestionsInitialized(nextRound);
         this.rounds.push(nextRound);
       } else {
         // Game complete

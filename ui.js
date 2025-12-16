@@ -4,6 +4,14 @@
  * Initialize UI
  */
 function initUI() {
+  // Restore UI state from appState
+  if (appState.uiState.leaderboardTab) {
+    leaderboardTab = appState.uiState.leaderboardTab;
+  }
+  if (appState.uiState.leaderboardSort) {
+    leaderboardSort = { ...appState.uiState.leaderboardSort };
+  }
+  
   bindEvents();
   render();
 }
@@ -77,6 +85,10 @@ function render() {
   renderLeaderboard();
   updateActionButtons();
   updateViewButtons();
+  
+  // Ensure leaderboard tab buttons reflect current state
+  document.getElementById('playersTabBtn')?.classList.toggle('active', leaderboardTab === 'players');
+  document.getElementById('teamsTabBtn')?.classList.toggle('active', leaderboardTab === 'teams');
 }
 
 /**
@@ -311,6 +323,8 @@ let leaderboardTab = 'players'; // 'players' or 'teams'
  */
 function switchLeaderboardTab(tab) {
   leaderboardTab = tab;
+  appState.uiState.leaderboardTab = tab;
+  appState.save();
   document.getElementById('playersTabBtn').classList.toggle('active', tab === 'players');
   document.getElementById('teamsTabBtn').classList.toggle('active', tab === 'teams');
   renderLeaderboard();
@@ -467,8 +481,17 @@ function renderTeamsLeaderboard(container) {
  * Render draw table (player assignments across rounds)
  */
 function renderDrawTable(container) {
-  // In game mode, show all pre-generated rounds; otherwise show completed rounds
-  const rounds = appState.isGameMode() ? appState.gameRounds : appState.rounds;
+  // In game mode, show all pre-generated rounds with current progress; otherwise show completed rounds
+  let rounds;
+  if (appState.isGameMode()) {
+    // Show all game rounds, but use the version from appState.rounds if it exists (has current progress)
+    rounds = appState.gameRounds.map(gameRound => {
+      const completedRound = appState.rounds.find(r => r.id === gameRound.id);
+      return completedRound || gameRound;
+    });
+  } else {
+    rounds = appState.rounds;
+  }
   
   if (rounds.length === 0) {
     container.innerHTML = '<p class="empty-state">Нет туров для отображения жеребьёвки. Начните игру или создайте команды.</p>';
@@ -537,6 +560,8 @@ function sortLeaderboard(column) {
     leaderboardSort.by = column;
     leaderboardSort.direction = 'desc';
   }
+  appState.uiState.leaderboardSort = { ...leaderboardSort };
+  appState.save();
   renderLeaderboard();
 }
 
@@ -1194,6 +1219,7 @@ function updateQuestionsPerRound() {
  */
 function switchView(view) {
   appState.currentView = view;
+  appState.save();
   renderCurrentRound();
   updateViewButtons();
 }
@@ -1241,6 +1267,17 @@ function renderTeamsView() {
 
   const round = appState.rounds.find(r => r.id === activeRoundId);
   if (!round) {
+    // Try to find the round in gameRounds if in game mode
+    if (appState.isGameMode()) {
+      const gameRound = appState.gameRounds.find(r => r.id === activeRoundId);
+      if (gameRound) {
+        appState.ensureRoundQuestionsInitialized(gameRound);
+        appState.rounds.push(gameRound);
+        // Re-render after adding the round
+        render();
+        return;
+      }
+    }
     container.innerHTML = '<p class="empty-state">Round not found.</p>';
     return;
   }
@@ -1297,6 +1334,17 @@ function renderScoringView() {
 
   const round = appState.rounds.find(r => r.id === activeRoundId);
   if (!round) {
+    // Try to find the round in gameRounds if in game mode
+    if (appState.isGameMode()) {
+      const gameRound = appState.gameRounds.find(r => r.id === activeRoundId);
+      if (gameRound) {
+        appState.ensureRoundQuestionsInitialized(gameRound);
+        appState.rounds.push(gameRound);
+        // Re-render after adding the round
+        render();
+        return;
+      }
+    }
     container.innerHTML = '<p class="empty-state">Round not found.</p>';
     return;
   }
@@ -1441,6 +1489,9 @@ function setGamePreset(rounds, questions) {
 }
 
 function handleAllowManualMoveChange() {
+  const allowManualMove = document.getElementById('allowManualMove')?.checked || false;
+  appState.uiState.allowManualMove = allowManualMove;
+  appState.save();
   render();
 }
 

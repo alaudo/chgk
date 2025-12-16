@@ -4,10 +4,18 @@ const STORAGE_KEYS = {
   players: 'chgk.players',
   rounds: 'chgk.rounds',
   settings: 'chgk.settings',
+  gameId: 'chgk.gameId',
+  gameRounds: 'chgk.gameRounds',
+  currentGameRoundIndex: 'chgk.currentGameRoundIndex',
+  currentQuestionNumber: 'chgk.currentQuestionNumber',
+  currentView: 'chgk.currentView',
+  currentRoundId: 'chgk.currentRoundId',
+  editingRoundId: 'chgk.editingRoundId',
+  uiState: 'chgk.uiState',
   version: 'chgk.stateVersion'
 };
 
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 const SAVE_DEBOUNCE_MS = 500;
 
 let saveTimeout = null;
@@ -19,11 +27,29 @@ let saveTimeout = null;
 function loadState() {
   try {
     const version = parseInt(localStorage.getItem(STORAGE_KEYS.version) || '0', 10);
+
+    const parseJson = (key, fallback) => {
+      const raw = localStorage.getItem(key);
+      if (raw === null || raw === undefined || raw === '') return fallback;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return fallback;
+      }
+    };
     
     let state = {
-      players: JSON.parse(localStorage.getItem(STORAGE_KEYS.players) || '[]'),
-      rounds: JSON.parse(localStorage.getItem(STORAGE_KEYS.rounds) || '[]'),
-      settings: JSON.parse(localStorage.getItem(STORAGE_KEYS.settings) || '{}')
+      players: parseJson(STORAGE_KEYS.players, []),
+      rounds: parseJson(STORAGE_KEYS.rounds, []),
+      settings: parseJson(STORAGE_KEYS.settings, {}),
+      gameId: parseJson(STORAGE_KEYS.gameId, null),
+      gameRounds: parseJson(STORAGE_KEYS.gameRounds, []),
+      currentGameRoundIndex: parseJson(STORAGE_KEYS.currentGameRoundIndex, 0),
+      currentQuestionNumber: parseJson(STORAGE_KEYS.currentQuestionNumber, 1),
+      currentView: parseJson(STORAGE_KEYS.currentView, 'teams'),
+      currentRoundId: parseJson(STORAGE_KEYS.currentRoundId, null),
+      editingRoundId: parseJson(STORAGE_KEYS.editingRoundId, null),
+      uiState: parseJson(STORAGE_KEYS.uiState, {})
     };
 
     // Apply migrations if needed
@@ -40,10 +66,23 @@ function loadState() {
       ...state.settings
     };
     
-    // Ensure game state properties exist
-    state.gameId = state.gameId || null;
-    state.gameRounds = state.gameRounds || [];
-    state.currentGameRoundIndex = state.currentGameRoundIndex || 0;
+    // Ensure game/UI state properties exist
+    state.gameId = state.gameId ?? null;
+    state.gameRounds = Array.isArray(state.gameRounds) ? state.gameRounds : [];
+    state.currentGameRoundIndex = Number.isFinite(state.currentGameRoundIndex) ? state.currentGameRoundIndex : 0;
+    state.currentQuestionNumber = Number.isFinite(state.currentQuestionNumber) ? state.currentQuestionNumber : 1;
+    state.currentView = state.currentView || 'teams';
+    state.currentRoundId = state.currentRoundId ?? null;
+    state.editingRoundId = state.editingRoundId ?? null;
+    state.uiState = state.uiState || {};
+
+    // Legacy fallback: if we have rounds but no active round, assume the last one is active.
+    if (!state.currentRoundId && Array.isArray(state.rounds) && state.rounds.length > 0) {
+      const lastRound = state.rounds[state.rounds.length - 1];
+      if (lastRound && lastRound.id) {
+        state.currentRoundId = lastRound.id;
+      }
+    }
 
     return state;
   } catch (error) {
@@ -59,7 +98,12 @@ function loadState() {
       },
       gameId: null,
       gameRounds: [],
-      currentGameRoundIndex: 0
+      currentGameRoundIndex: 0,
+      currentQuestionNumber: 1,
+      currentView: 'teams',
+      currentRoundId: null,
+      editingRoundId: null,
+      uiState: {}
     };
   }
 }
@@ -78,6 +122,14 @@ function saveStateDebounced(state) {
       localStorage.setItem(STORAGE_KEYS.players, JSON.stringify(state.players));
       localStorage.setItem(STORAGE_KEYS.rounds, JSON.stringify(state.rounds));
       localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
+      localStorage.setItem(STORAGE_KEYS.gameId, JSON.stringify(state.gameId ?? null));
+      localStorage.setItem(STORAGE_KEYS.gameRounds, JSON.stringify(state.gameRounds ?? []));
+      localStorage.setItem(STORAGE_KEYS.currentGameRoundIndex, JSON.stringify(state.currentGameRoundIndex ?? 0));
+      localStorage.setItem(STORAGE_KEYS.currentQuestionNumber, JSON.stringify(state.currentQuestionNumber ?? 1));
+      localStorage.setItem(STORAGE_KEYS.currentView, JSON.stringify(state.currentView ?? 'teams'));
+      localStorage.setItem(STORAGE_KEYS.currentRoundId, JSON.stringify(state.currentRoundId ?? null));
+      localStorage.setItem(STORAGE_KEYS.editingRoundId, JSON.stringify(state.editingRoundId ?? null));
+      localStorage.setItem(STORAGE_KEYS.uiState, JSON.stringify(state.uiState ?? {}));
       localStorage.setItem(STORAGE_KEYS.version, CURRENT_VERSION.toString());
     } catch (error) {
       console.error('Failed to save state:', error);
@@ -99,6 +151,14 @@ function saveStateImmediate(state) {
     localStorage.setItem(STORAGE_KEYS.players, JSON.stringify(state.players));
     localStorage.setItem(STORAGE_KEYS.rounds, JSON.stringify(state.rounds));
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
+    localStorage.setItem(STORAGE_KEYS.gameId, JSON.stringify(state.gameId ?? null));
+    localStorage.setItem(STORAGE_KEYS.gameRounds, JSON.stringify(state.gameRounds ?? []));
+    localStorage.setItem(STORAGE_KEYS.currentGameRoundIndex, JSON.stringify(state.currentGameRoundIndex ?? 0));
+    localStorage.setItem(STORAGE_KEYS.currentQuestionNumber, JSON.stringify(state.currentQuestionNumber ?? 1));
+    localStorage.setItem(STORAGE_KEYS.currentView, JSON.stringify(state.currentView ?? 'teams'));
+    localStorage.setItem(STORAGE_KEYS.currentRoundId, JSON.stringify(state.currentRoundId ?? null));
+    localStorage.setItem(STORAGE_KEYS.editingRoundId, JSON.stringify(state.editingRoundId ?? null));
+    localStorage.setItem(STORAGE_KEYS.uiState, JSON.stringify(state.uiState ?? {}));
     localStorage.setItem(STORAGE_KEYS.version, CURRENT_VERSION.toString());
   } catch (error) {
     console.error('Failed to save state:', error);
@@ -153,7 +213,15 @@ function importState(jsonString) {
     const state = {
       players: imported.players,
       rounds: imported.rounds || [],
-      settings: imported.settings || {}
+      settings: imported.settings || {},
+      gameId: imported.gameId ?? null,
+      gameRounds: imported.gameRounds || [],
+      currentGameRoundIndex: imported.currentGameRoundIndex || 0,
+      currentQuestionNumber: imported.currentQuestionNumber || 1,
+      currentView: imported.currentView || 'teams',
+      currentRoundId: imported.currentRoundId ?? null,
+      editingRoundId: imported.editingRoundId ?? null,
+      uiState: imported.uiState || {}
     };
 
     // Apply migrations if needed
