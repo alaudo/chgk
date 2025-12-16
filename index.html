@@ -36,14 +36,22 @@
               placeholder="Имя игрока" 
               class="input">
             <label class="checkbox-label">
-              <input type="checkbox" id="isCaptainCheck">
+              <input type="checkbox" id="isCaptainCheck" onchange="toggleTeamNameInput()">
               Капитан
             </label>
-            <input 
-              type="text" 
-              id="teamNameInput" 
-              placeholder="Название команды" 
-              class="input input-small">
+            <div id="captainInputs" style="display: none;">
+              <input 
+                type="text" 
+                id="teamNameInput" 
+                placeholder="Название команды" 
+                class="input input-small">
+              <input 
+                type="color" 
+                id="teamColorInput" 
+                value="#3b82f6"
+                class="color-input"
+                title="Цвет команды">
+            </div>
             <button id="addPlayerBtn" class="btn btn-primary">Добавить</button>
           </div>
           <div id="playersList" class="players-list"></div>
@@ -65,6 +73,12 @@
             <label class="checkbox-label">
               <input type="checkbox" id="allowManualMove">
               Разрешить перемещение игроков вручную
+            </label>
+          </div>
+          <div class="settings-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="hideCaptainsCheck" onchange="handleHideCaptainsChange()">
+              Скрыть капитанов из результатов
             </label>
           </div>
           <div id="gameInfo" class="game-info"></div>
@@ -470,6 +484,9 @@
       appState.init();
       document.getElementById('questionsPerRound').value = appState.settings.questionsPerRound || 12;
       document.getElementById('gameRoundsInput').value = appState.settings.gameRounds || 5;
+      if (document.getElementById('hideCaptainsCheck')) {
+        document.getElementById('hideCaptainsCheck').checked = appState.settings.hideCaptains || false;
+      }
       initUI();
     });
   </script>

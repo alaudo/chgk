@@ -11,7 +11,8 @@ class AppState {
       allowUnevenTeams: true,
       variabilityWeight: 1.0,
       questionsPerRound: 12,
-      gameRounds: 5
+      gameRounds: 5,
+      hideCaptains: false
     };
     this.undoSnapshot = null;
     // Game mode state
@@ -49,6 +50,9 @@ class AppState {
       if (player.teamName === undefined) {
         player.teamName = '';
       }
+      if (player.teamColor === undefined) {
+        player.teamColor = player.isCaptain ? '#3b82f6' : null;
+      }
     });
   }
 
@@ -76,6 +80,7 @@ class AppState {
       name: name.trim(),
       isCaptain: isCaptain,
       teamName: teamName.trim(),
+      teamColor: isCaptain ? '#3b82f6' : null, // Default blue for captains
       rating: 0,
       active: true,
       roundsPlayed: 0,
@@ -171,11 +176,17 @@ class AppState {
     const captainIds = captains.map(c => c.id);
     const teams = generateTeams(captainIds, nonCaptains, this.settings);
 
-    // Apply team names from captains
+    // Apply team names and colors from captains
     teams.forEach(team => {
       const captain = captains.find(c => c.id === team.captainId);
       if (captain && captain.teamName) {
         team.label = captain.teamName;
+      }
+      if (captain && captain.teamColor) {
+        team.color = captain.teamColor;
+      } else if (captain) {
+        // Set default color if captain doesn't have one
+        team.color = captain.teamColor || '#3b82f6';
       }
     });
 
@@ -428,12 +439,18 @@ class AppState {
     const captainIds = captains.map(c => c.id);
     const allRounds = generateGameRounds(numRounds, captainIds, nonCaptains, this.settings);
 
-    // Apply team names from captains
+    // Apply team names and colors from captains
     allRounds.forEach(round => {
       round.teams.forEach(team => {
         const captain = captains.find(c => c.id === team.captainId);
         if (captain && captain.teamName) {
           team.label = captain.teamName;
+        }
+        if (captain && captain.teamColor) {
+          team.color = captain.teamColor;
+        } else if (captain) {
+          // Set default color if captain doesn't have one
+          team.color = captain.teamColor || '#3b82f6';
         }
       });
     });

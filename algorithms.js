@@ -267,10 +267,28 @@ function generateGameRounds(numRounds, captainIds, nonCaptains, options = {}) {
       playerIds: [captainId]
     }));
     
-    // Distribute non-captains evenly
+    // Distribute non-captains evenly to ensure all players are included
     shuffledNonCaptains.forEach((player, index) => {
       const teamIndex = index % teamCount;
       teams[teamIndex].playerIds.push(player.id);
+    });
+    
+    // Verify all non-captains are assigned
+    const assignedNonCaptains = new Set();
+    teams.forEach(team => {
+      team.playerIds.forEach(playerId => {
+        if (playerId !== team.captainId) {
+          assignedNonCaptains.add(playerId);
+        }
+      });
+    });
+    
+    // Add any missing non-captains
+    nonCaptains.forEach(player => {
+      if (!assignedNonCaptains.has(player.id)) {
+        const teamIndex = Math.floor(Math.random() * teamCount);
+        teams[teamIndex].playerIds.push(player.id);
+      }
     });
     
     currentRounds.push({

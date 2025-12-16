@@ -667,6 +667,56 @@ body {
   border-color: var(--primary-color);
 }
 
+/* Color picker styling */
+.color-input, .team-color-picker {
+  width: 40px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.color-input {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+.results-options {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 15px;
+}
+
+#captainInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Custom team color support */
+.team-card-custom .team-header {
+  background: linear-gradient(135deg, var(--team-color), var(--team-color)dd) !important;
+}
+
+.team-card-custom .team-members,
+.team-card-custom .team-questions,
+.team-card-custom .score-display {
+  background: white !important;
+  color: var(--text-primary) !important;
+}
+
+tr[style*="--team-color"] {
+  border-left: 4px solid var(--team-color) !important;
+}
+
+.team-cell[style*="background-color"] {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
 /* Rounds History */
 .rounds-history {
   display: flex;
@@ -1660,29 +1710,45 @@ body {
   text-align: center;
   color: white;
   position: relative;
-  padding: 40px;
+  padding: 20px;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .timer-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 10px;
+  right: 15px;
   background: transparent;
   border: none;
   color: white;
-  font-size: 48px;
+  font-size: 2rem;
   cursor: pointer;
   opacity: 0.7;
   transition: opacity 0.2s;
+  z-index: 1000;
 }
 
 .timer-close:hover {
   opacity: 1;
 }
 
+.timer-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+}
+
 .timer-question-title {
-  font-size: 4rem;
-  margin-bottom: 30px;
+  font-size: clamp(2rem, 8vw, 4rem);
+  margin-bottom: 1rem;
   font-weight: 700;
 }
 
@@ -1692,12 +1758,13 @@ body {
 }
 
 .timer-display {
-  font-size: 24rem;
+  font-size: clamp(4rem, 30vw, 20rem);
   font-weight: 700;
   font-family: 'Courier New', monospace;
-  margin: 40px 0;
+  margin: 1rem 0;
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
   transition: color 0.3s;
+  line-height: 0.9;
 }
 
 .timer-display.timer-overtime {
@@ -1728,22 +1795,57 @@ body {
 }
 
 .timer-phase-label {
-  font-size: 2rem;
-  margin-bottom: 30px;
+  font-size: clamp(1rem, 4vw, 2rem);
+  margin-bottom: 1rem;
   opacity: 0.8;
   font-weight: 600;
 }
 
 .timer-controls {
   display: flex;
-  gap: 20px;
+  gap: clamp(10px, 2vw, 20px);
   justify-content: center;
+  flex-wrap: wrap;
+  padding: 10px;
+  position: sticky;
+  bottom: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
 }
 
 .btn-large {
-  padding: 20px 40px;
-  font-size: 1.5rem;
+  padding: clamp(10px, 2vw, 20px) clamp(15px, 4vw, 40px);
+  font-size: clamp(0.9rem, 2.5vw, 1.5rem);
   font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Responsive adjustments */
+@media (max-height: 600px) {
+  .timer-modal-content {
+    padding: 10px;
+  }
+  
+  .timer-display {
+    font-size: clamp(3rem, 25vw, 12rem);
+    margin: 0.5rem 0;
+  }
+  
+  .timer-question-title {
+    font-size: clamp(1.5rem, 6vw, 3rem);
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .timer-controls {
+    gap: 8px;
+  }
+  
+  .btn-large {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
 }
 
 #restartTimerBtn {

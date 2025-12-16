@@ -146,7 +146,11 @@ function renderPlayers() {
       <div class="player-item ${player.active ? '' : 'inactive'}">
         <div class="player-info">
           <span class="player-name">${escapeHtml(player.name)}</span>
-          ${player.isCaptain ? `<span class="captain-badge">👑 Captain${player.teamName ? ': ' + escapeHtml(player.teamName) : ''}</span>` : ''}
+          ${player.isCaptain ? `
+            <span class="captain-badge">👑 Captain${player.teamName ? ': ' + escapeHtml(player.teamName) : ''}</span>
+            <input type="color" class="team-color-picker" value="${player.teamColor || '#3b82f6'}" 
+                   onchange="updatePlayerColor('${player.id}', this.value)" title="Цвет команды">
+          ` : ''}
           ${!player.active ? '<span class="inactive-badge">Inactive</span>' : ''}
         </div>
         <div class="player-stats">
@@ -331,7 +335,12 @@ function renderLeaderboard() {
  * Render players leaderboard
  */
 function renderPlayersLeaderboard(container) {
-  const leaderboard = appState.computeLeaderboard(leaderboardSort.by, leaderboardSort.direction);
+  let leaderboard = appState.computeLeaderboard(leaderboardSort.by, leaderboardSort.direction);
+  
+  // Filter out captains if hide captains is enabled
+  if (appState.settings.hideCaptains) {
+    leaderboard = leaderboard.filter(player => !player.isCaptain);
+  }
 
   if (leaderboard.length === 0) {
     container.innerHTML = '<p class="empty-state">No scores yet. Complete a round to see ratings.</p>';
@@ -503,8 +512,9 @@ function renderDrawTable(container) {
                   const team = round.teams.find(t => t.playerIds.includes(player.id));
                   const teamName = team ? escapeHtml(team.label) : '—';
                   const teamIndex = team ? round.teams.indexOf(team) + 1 : 0;
-                  const cellClass = team ? `team-cell draw-team-${teamIndex}` : 'no-team-cell';
-                  return `<td class="${cellClass}">${teamName}</td>`;
+                  const cellClass = team ? (team.color ? 'team-cell' : `team-cell draw-team-${teamIndex}`) : 'no-team-cell';
+                  const cellStyle = team && team.color ? `style="background-color: ${team.color}30; border-left: 4px solid ${team.color}"` : '';
+                  return `<td class="${cellClass}" ${cellStyle}>${teamName}</td>`;
                 }).join('')}
               </tr>
             `;
@@ -858,8 +868,10 @@ function handleAddPlayer() {
   const input = document.getElementById('playerNameInput');
   const isCaptain = document.getElementById('isCaptainCheck').checked;
   const teamNameInput = document.getElementById('teamNameInput');
+  const teamColorInput = document.getElementById('teamColorInput');
   const name = input.value.trim();
   const teamName = teamNameInput.value.trim();
+  const teamColor = isCaptain ? teamColorInput.value : null;
 
   if (!name) {
     showWarning('Please enter a player name');
@@ -880,10 +892,16 @@ function handleAddPlayer() {
     }
   }
 
-  appState.addPlayer(name, isCaptain, teamName);
+  const player = appState.addPlayer(name, isCaptain, teamName);
+  if (isCaptain && teamColor) {
+    appState.updatePlayer(player.id, { teamColor });
+  }
+  
   input.value = '';
   teamNameInput.value = '';
+  teamColorInput.value = '#3b82f6';
   document.getElementById('isCaptainCheck').checked = false;
+  toggleTeamNameInput();
   render();
 }
 
@@ -908,6 +926,45 @@ function deletePlayer(playerId) {
     appState.deletePlayer(playerId);
     render();
   }
+}
+
+function updatePlayerColor(playerId, color) {
+  appState.updatePlayer(playerId, { teamColor: color });
+  
+  // Update all active rounds to use new color
+  if (appState.currentRoundId) {
+    const round = appState.rounds.find(r => r.id === appState.currentRoundId);
+    if (round) {
+      round.teams.forEach(team => {
+        if (team.captainId === playerId) {
+          team.color = color;
+        }
+      });
+    }
+  }
+  
+  // Update game rounds if in game mode
+  if (appState.isGameMode()) {
+    appState.gameRounds.forEach(round => {
+      round.teams.forEach(team => {
+        if (team.captainId === playerId) {
+          team.color = color;
+        }
+      });
+    });
+  }
+  
+  // Update all finished rounds
+  appState.rounds.forEach(round => {
+    round.teams.forEach(team => {
+      if (team.captainId === playerId) {
+        team.color = color;
+      }
+    });
+  });
+  
+  appState.save();
+  render();
 }
 
 function handleStartGame() {
@@ -1196,8 +1253,8 @@ function renderTeamsView() {
           .filter(p => p);
 
         return `
-          <div class="team-card team-card-${teamIndex + 1}">
-            <div class="team-header">
+          <div class="team-card ${team.color ? 'team-card-custom' : `team-card-${teamIndex + 1}`}" ${team.color ? `style="--team-color: ${team.color}"` : ''}>
+            <div class="team-header" ${team.color ? `style="background: linear-gradient(135deg, ${team.color}, ${team.color}dd) !important"` : ''}>
               <h3>${escapeHtml(team.label)}</h3>
             </div>
             <div class="team-members">
@@ -1271,7 +1328,7 @@ function renderScoringView() {
             const score = questions.filter(q => q).length;
             
             return `
-              <tr class="team-row-${teamIndex + 1}">
+              <tr class="${team.color ? '' : `team-row-${teamIndex + 1}`}" ${team.color ? `style="--team-color: ${team.color}; background-color: ${team.color}20;"` : ''}>
                 <td class="team-name"><strong>${escapeHtml(team.label)}</strong></td>
                 ${Array.from({length: questionsCount}, (_, i) => `
                   <td class="question-cell" data-question="${i + 1}">
@@ -1342,7 +1399,13 @@ function handleSettingsChange() {
 function editRoundFromHistory(roundId) {
   try {
     appState.editRound(roundId);
+    appState.currentView = 'scoring'; // Ensure we're in scoring view
     render();
+    // Force focus on the scoring view
+    setTimeout(() => {
+      const scoringBtn = document.getElementById('viewScoringBtn');
+      if (scoringBtn) scoringBtn.click();
+    }, 100);
     showWarning('Editing round. Make changes and click Save.', 'info');
   } catch (error) {
     showWarning(error.message);
@@ -1353,13 +1416,14 @@ function editRoundFromHistory(roundId) {
  * Toggle team name input visibility
  */
 function toggleTeamNameInput() {
-  const teamNameInput = document.getElementById('teamNameInput');
+  const captainInputs = document.getElementById('captainInputs');
   const isCaptain = document.getElementById('isCaptainCheck').checked;
   
-  if (teamNameInput) {
-    teamNameInput.style.display = isCaptain ? 'block' : 'none';
+  if (captainInputs) {
+    captainInputs.style.display = isCaptain ? 'block' : 'none';
     if (isCaptain) {
-      teamNameInput.focus();
+      const teamNameInput = document.getElementById('teamNameInput');
+      if (teamNameInput) teamNameInput.focus();
     }
   }
 }
@@ -1380,6 +1444,13 @@ function handleAllowManualMoveChange() {
   render();
 }
 
+function handleHideCaptainsChange() {
+  const hideCaptains = document.getElementById('hideCaptainsCheck').checked;
+  appState.settings.hideCaptains = hideCaptains;
+  appState.save();
+  renderLeaderboard();
+}
+
 function handleReshuffleCurrent() {
   if (!appState.currentRoundId) return;
   
@@ -1398,9 +1469,15 @@ function handleReshuffleCurrent() {
     const shuffledNonCaptains = shuffle([...nonCaptains]);
     const teamCount = round.teams.length;
     
-    // Reset teams to just captains
+    // Reset teams to just captains but preserve team properties
     round.teams.forEach(team => {
+      const captain = captains.find(c => c.id === team.captainId);
       team.playerIds = [team.captainId];
+      // Refresh team label and color from captain
+      if (captain) {
+        if (captain.teamName) team.label = captain.teamName;
+        if (captain.teamColor) team.color = captain.teamColor;
+      }
     });
     
     // Distribute non-captains evenly
@@ -1450,11 +1527,14 @@ function handleAddUnassignedPlayers() {
       return;
     }
     
-    // Add unassigned players to all remaining rounds
+    // Add unassigned players to all remaining rounds with random assignment
     remainingRounds.forEach(round => {
       const teamCount = round.teams.length;
-      unassignedPlayers.forEach((player, index) => {
-        const teamIndex = index % teamCount;
+      const shuffledPlayers = shuffle([...unassignedPlayers]);
+      
+      shuffledPlayers.forEach((player, index) => {
+        // Use random team assignment instead of round-robin
+        const teamIndex = Math.floor(Math.random() * teamCount);
         if (!round.teams[teamIndex].playerIds.includes(player.id)) {
           round.teams[teamIndex].playerIds.push(player.id);
         }
@@ -1514,16 +1594,17 @@ function openQuestionTimer() {
     <div class="modal-overlay fullscreen-modal" id="questionTimerModal" onclick="event.stopPropagation()">
       <div class="timer-modal-content">
         <button onclick="closeQuestionTimer()" class="timer-close">&times;</button>
-        <h1 class="timer-question-title">Вопрос №<span id="questionNumberDisplay">${globalQuestionNumber}</span></h1>
-        <div class="timer-display" id="timerDisplay">${timerSettings.mainTime.toFixed(timerSettings.decimalDigits)}</div>
-        <div class="timer-phase-label" id="phaseLabel">Основное время</div>
+        <div class="timer-main-content">
+          <h1 class="timer-question-title">Вопрос №<span id="questionNumberDisplay">${globalQuestionNumber}</span></h1>
+          <div class="timer-display" id="timerDisplay">${timerSettings.mainTime.toFixed(timerSettings.decimalDigits)}</div>
+          <div class="timer-phase-label" id="phaseLabel">Основное время</div>
+        </div>
         <div class="timer-controls">
           <button id="startTimerBtn" class="btn btn-success btn-large" onclick="startTimer()">▶ Начать</button>
           <button id="pauseTimerBtn" class="btn btn-warning btn-large" onclick="pauseTimer()" style="display: none;">⏸ Пауза</button>
           <button id="restartTimerBtn" class="btn btn-danger btn-large" onclick="restartTimer()" style="display: none;">↻ Перезапустить</button>
           <button id="nextQuestionBtn" class="btn btn-primary btn-large" onclick="nextQuestionNow()">⏭ Следующий</button>
         </div>
-      </div>
       <div class="timer-settings-panel" id="timerSettingsPanel">
         <h4>Настройки таймера</h4>
         <div class="timer-setting">
@@ -1568,6 +1649,13 @@ function renderTimerTeamsTable() {
   const currentQ = appState.currentQuestionNumber || 1;
   const questionsToShow = [];
   
+  // Calculate global question offset
+  const currentRoundIndex = appState.rounds.findIndex(r => r.id === activeRoundId);
+  let globalQuestionOffset = 0;
+  for (let i = 0; i < currentRoundIndex; i++) {
+    globalQuestionOffset += appState.rounds[i].questionsCount || 12;
+  }
+  
   // Calculate which questions to show based on settings
   for (let i = Math.max(1, currentQ - timerSettings.lastQuestionsShown + 1); i <= currentQ; i++) {
     questionsToShow.push(i);
@@ -1578,7 +1666,8 @@ function renderTimerTeamsTable() {
   
   let html = '<table class="mini-teams-table"><thead><tr><th>Команда</th>';
   questionsToShow.forEach(q => {
-    html += `<th>Q${q}</th>`;
+    const globalQ = globalQuestionOffset + q;
+    html += `<th>${globalQ}</th>`;
   });
   html += '</tr></thead><tbody>';
   
