@@ -157,17 +157,31 @@ function updateCurrentRoundTitle() {
 function renderPlayers() {
   const container = document.getElementById('playersList');
   const players = appState.players;
+  const displayPlayers = [...players].reverse();
 
-  if (players.length === 0) {
+  if (displayPlayers.length === 0) {
     container.innerHTML = '<p class="empty-state">No players added yet. Add your first player above.</p>';
     return;
   }
 
-  container.innerHTML = players
-    .map(player => `
-      <div class="player-item ${player.active ? '' : 'inactive'}">
+  container.classList.toggle('players-animate', animatePlayerInsert);
+
+  container.innerHTML = displayPlayers
+    .map(player => {
+      const isInserted = animatePlayerInsert && player.id === lastAddedPlayerId;
+      return `
+      <div class="player-item ${player.active ? '' : 'inactive'} ${isInserted ? 'player-inserted' : ''}">
         <div class="player-info">
-          <span class="player-name">${escapeHtml(player.name)}</span>
+          <input
+            class="player-name"
+            id="playerNameInput-${player.id}"
+            type="text"
+            value="${escapeHtml(player.name)}"
+            oninput="clearPlayerNameValidity(this)"
+            onkeydown="handlePlayerNameKeydown(event, '${player.id}')"
+            onblur="commitPlayerNameEdit('${player.id}', this)"
+            ${player.active ? '' : 'disabled'}
+          />
           ${player.isCaptain ? `
             <span class="captain-badge">👑 Captain${player.teamName ? ': ' + escapeHtml(player.teamName) : ''}</span>
             <input type="color" class="team-color-picker" value="${player.teamColor || '#3b82f6'}" 
@@ -180,7 +194,6 @@ function renderPlayers() {
           <span>Rounds: ${player.roundsPlayed || 0}</span>
         </div>
         <div class="player-actions">
-          <button onclick="editPlayerName('${player.id}')" class="btn-small" title="Edit Name">✏️</button>
           <button onclick="toggleCaptain('${player.id}')" class="btn-small">
             ${player.isCaptain ? '👤' : '👑'}
           </button>
@@ -191,8 +204,68 @@ function renderPlayers() {
           <button onclick="deletePlayer('${player.id}')" class="btn-small btn-danger">×</button>
         </div>
       </div>
-    `)
+    `;
+    })
     .join('');
+
+  if (animatePlayerInsert) {
+    if (playerInsertCleanupTimer) clearTimeout(playerInsertCleanupTimer);
+    playerInsertCleanupTimer = setTimeout(() => {
+      animatePlayerInsert = false;
+      lastAddedPlayerId = null;
+      container.classList.remove('players-animate');
+      playerInsertCleanupTimer = null;
+    }, 650);
+  }
+}
+
+function clearPlayerNameValidity(inputEl) {
+  if (!inputEl) return;
+  inputEl.setCustomValidity('');
+}
+
+function handlePlayerNameKeydown(event, playerId) {
+  if (!event) return;
+
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    commitPlayerNameEdit(playerId, event.target);
+    event.target.blur();
+  }
+
+  if (event.key === 'Escape') {
+    const player = appState.players.find(p => p.id === playerId);
+    if (player && event.target) {
+      event.target.value = player.name;
+      event.target.setCustomValidity('');
+      event.target.blur();
+    }
+  }
+}
+
+function commitPlayerNameEdit(playerId, inputEl) {
+  if (!inputEl) return;
+  const player = appState.players.find(p => p.id === playerId);
+  if (!player) return;
+
+  const newName = (inputEl.value || '').trim();
+  const oldName = (player.name || '').trim();
+
+  if (newName === oldName) {
+    inputEl.value = player.name;
+    inputEl.setCustomValidity('');
+    return;
+  }
+
+  try {
+    appState.updatePlayerName(playerId, newName);
+    inputEl.setCustomValidity('');
+    render();
+  } catch (error) {
+    inputEl.setCustomValidity(error.message || 'Invalid name');
+    inputEl.reportValidity();
+    inputEl.value = player.name;
+  }
 }
 
 /**
@@ -226,7 +299,7 @@ function renderTeams() {
 
       return `
         <div class="team-card team-card-${teamIndex + 1}">
-          <div class="team-header">
+          <div class="team-header" onclick="pickTeamColor('${team.captainId}')" title="Выбрать цвет команды" ${team.color ? `style="background: linear-gradient(135deg, ${team.color}, ${team.color}dd) !important"` : ''}>
             <h3>${escapeHtml(team.label)}</h3>
           </div>
           <div class="team-members">
@@ -328,6 +401,11 @@ function renderRoundsHistory() {
 let leaderboardSort = { by: 'correctAnswers', direction: 'desc' };
 let leaderboardTab = 'players'; // 'players' or 'teams'
 
+// Transient UI state
+let lastAddedPlayerId = null;
+let animatePlayerInsert = false;
+let playerInsertCleanupTimer = null;
+
 /**
  * Switch leaderboard tab
  */
@@ -423,11 +501,13 @@ function renderTeamsLeaderboard(container) {
     
     round.teams.forEach(team => {
       const captain = appState.players.find(p => p.id === team.captainId);
-      const teamName = team.label;
+      const teamKey = team.captainId;
+      const teamName = (captain?.teamName && captain.teamName.trim()) ? captain.teamName.trim() : team.label;
       const score = round.scores[team.id] || 0;
       
-      if (!teamStats[teamName]) {
-        teamStats[teamName] = {
+      if (!teamStats[teamKey]) {
+        teamStats[teamKey] = {
+          captainId: team.captainId,
           name: teamName,
           captainName: captain?.name || 'Unknown',
           totalScore: 0,
@@ -436,9 +516,9 @@ function renderTeamsLeaderboard(container) {
         };
       }
       
-      teamStats[teamName].totalScore += score;
-      teamStats[teamName].roundsPlayed++;
-      teamStats[teamName].correctAnswers += score; // Score = correct answers
+      teamStats[teamKey].totalScore += score;
+      teamStats[teamKey].roundsPlayed++;
+      teamStats[teamKey].correctAnswers += score; // Score = correct answers
     });
   });
   
@@ -475,7 +555,7 @@ function renderTeamsLeaderboard(container) {
         ${teamsArray.map((team, index) => `
           <tr>
             <td class="rank">${index + 1}</td>
-            <td><a href="#" class="player-link" onclick="showTeamStats('${encodeURIComponent(team.name)}'); return false;"><strong>${escapeHtml(team.name)}</strong></a></td>
+            <td><a href="#" class="player-link" onclick="showTeamStats('${encodeURIComponent(team.captainId)}'); return false;"><strong>${escapeHtml(team.name)}</strong></a></td>
             <td>${escapeHtml(team.captainName)}</td>
             <td>${team.correctAnswers}</td>
             <td>${team.avgPerRound.toFixed(1)}</td>
@@ -519,7 +599,12 @@ function renderDrawTable(container) {
   // Show players that appear in rounds (prioritize those, then show other active players)
   const playersInRounds = appState.players.filter(p => playerIdsInRounds.has(p.id));
   const otherActivePlayers = appState.players.filter(p => p.active && !playerIdsInRounds.has(p.id));
-  const players = [...playersInRounds, ...otherActivePlayers];
+  let players = [...playersInRounds, ...otherActivePlayers];
+
+  // Hide captains in draw tab if requested
+  if (appState.settings.hideCaptains) {
+    players = players.filter(p => !p.isCaptain);
+  }
 
   // Build table
   const tableHtml = `
@@ -583,25 +668,67 @@ function showPlayerStats(playerId) {
   if (!player) return;
 
   const questionHistory = player.questionHistory || [];
-  const correctAnswers = questionHistory.filter(q => q.correct);
-  const totalQuestions = questionHistory.length;
-  
-  // Group by round
-  const roundStats = {};
-  appState.rounds.forEach(round => {
-    const roundQuestions = questionHistory.filter(q => q.roundId === round.id);
-    if (roundQuestions.length > 0) {
-      const team = round.teams.find(t => t.playerIds.includes(playerId));
-      const correct = roundQuestions.filter(q => q.correct).length;
-      roundStats[round.id] = {
-        roundIndex: round.index,
-        teamLabel: team ? team.label : 'Unknown',
-        correct: correct,
-        total: roundQuestions.length,
-        score: round.scores[team?.id] || 0
+
+  const correctByRound = new Map();
+  questionHistory
+    .filter(q => q && q.correct)
+    .forEach(q => {
+      const list = correctByRound.get(q.roundId) || [];
+      list.push(q);
+      correctByRound.set(q.roundId, list);
+    });
+
+  const correctLines = Array.from(correctByRound.entries())
+    .map(([roundId, answers]) => {
+      const round = appState.rounds.find(r => r.id === roundId);
+      const roundIndex = round?.index ?? '?';
+      const team = round?.teams?.find(t => t.id === answers[0]?.teamId) || round?.teams?.find(t => t.playerIds.includes(playerId));
+      const teamLabel = team?.label || '—';
+
+      const questionNums = answers
+        .map(a => (a.questionIndex ?? 0) + 1)
+        .filter(n => Number.isFinite(n))
+        .sort((a, b) => a - b);
+      const uniqueNums = Array.from(new Set(questionNums));
+
+      return {
+        roundIndex,
+        text: `Тур ${roundIndex} ("${teamLabel}"): ${uniqueNums.join(', ')}`
       };
-    }
+    })
+    .sort((a, b) => {
+      const aNum = Number(a.roundIndex);
+      const bNum = Number(b.roundIndex);
+      const aIsNum = Number.isFinite(aNum);
+      const bIsNum = Number.isFinite(bNum);
+      if (aIsNum && bIsNum) return aNum - bNum;
+      if (aIsNum) return -1;
+      if (bIsNum) return 1;
+      return 0;
+    });
+
+  // Most often played together with (include future rounds in game mode)
+  const togetherCounts = new Map();
+  const roundsForTogether = appState.isGameMode() ? appState.gameRounds : appState.rounds;
+
+  (roundsForTogether || []).forEach(round => {
+    const team = round.teams?.find(t => t.playerIds?.includes(playerId));
+    if (!team) return;
+    team.playerIds.forEach(otherId => {
+      if (otherId === playerId) return;
+      togetherCounts.set(otherId, (togetherCounts.get(otherId) || 0) + 1);
+    });
   });
+
+  const togetherTop5 = Array.from(togetherCounts.entries())
+    .map(([otherId, count]) => {
+      const other = appState.players.find(p => p.id === otherId);
+      if (!other) return null;
+      return { name: other.name, count };
+    })
+    .filter(x => x)
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, 5);
 
   const statsHtml = `
     <div class="modal-overlay" onclick="closePlayerStats()">
@@ -629,13 +756,11 @@ function showPlayerStats(playerId) {
           <h3>Round History</h3>
           <div class="rounds-stats">
             ${appState.rounds
-              .filter(round => questionHistory.some(q => q.roundId === round.id))
+              .filter(round => round.teams?.some(t => t.playerIds?.includes(playerId)))
               .map(round => {
-                const roundQuestions = questionHistory.filter(q => q.roundId === round.id);
                 const playerTeam = round.teams.find(t => t.playerIds.includes(playerId));
-                
-                // Build condensed table
-                const questionsCount = round.questionsCount || 12;
+                const questionsCount = round.questionsCount || appState.settings.questionsPerRound || 12;
+
                 const tableHtml = `
                   <table class="mini-round-table">
                     <thead>
@@ -647,10 +772,10 @@ function showPlayerStats(playerId) {
                     </thead>
                     <tbody>
                       ${round.teams.map(team => {
-                        const teamQuestions = round.questions[team.id] || [];
+                        const teamQuestions = round.questions?.[team.id] || [];
                         const teamScore = teamQuestions.filter(q => q).length;
                         const isPlayerTeam = team.id === playerTeam?.id;
-                        
+
                         return `
                           <tr class="${isPlayerTeam ? 'player-team-row' : ''}">
                             <td class="team-col">${escapeHtml(team.label)}</td>
@@ -665,13 +790,15 @@ function showPlayerStats(playerId) {
                     </tbody>
                   </table>
                 `;
-                
-                const stats = roundStats[round.id];
+
+                const playerTeamQuestions = (playerTeam && round.questions?.[playerTeam.id]) ? round.questions[playerTeam.id] : [];
+                const playerTeamScore = playerTeamQuestions.filter(q => q).length;
+
                 return `
                   <div class="round-stat-item">
                     <div class="round-stat-header">
-                      <strong>Round ${round.index}</strong> - ${playerTeam?.label || 'Unknown'}
-                      <span class="round-stat-summary">Team Score: ${stats.score}</span>
+                      <strong>Round ${round.index}</strong> - ${escapeHtml(playerTeam?.label || 'Unknown')}
+                      <span class="round-stat-summary">Team Score: ${playerTeamScore}</span>
                     </div>
                     ${tableHtml}
                   </div>
@@ -679,17 +806,18 @@ function showPlayerStats(playerId) {
               }).join('') || '<p>No rounds played yet.</p>'}
           </div>
 
-          <h3>Correct Answers</h3>
+          <h3>Правильные ответы</h3>
           <div class="correct-answers-list">
-            ${correctAnswers.map(q => {
-              const round = appState.rounds.find(r => r.id === q.roundId);
-              const team = round?.teams.find(t => t.id === q.teamId);
-              return `
-                <div class="correct-answer-item">
-                  Round ${round?.index}, ${team?.label}, Q${q.questionIndex}
-                </div>
-              `;
-            }).join('') || '<p>No correct answers yet.</p>'}
+            ${correctLines.length
+              ? correctLines.map(x => `<div class="correct-answer-item">${escapeHtml(x.text)}</div>`).join('')
+              : '<p>No correct answers yet.</p>'}
+          </div>
+
+          <h3>Most often played together with</h3>
+          <div class="correct-answers-list">
+            ${togetherTop5.length
+              ? togetherTop5.map(x => `<div class="correct-answer-item">${escapeHtml(x.name)} — ${x.count}</div>`).join('')
+              : '<p>No data yet.</p>'}
           </div>
         </div>
       </div>
@@ -740,20 +868,36 @@ document.addEventListener('keydown', (e) => {
  * Show team statistics popup
  */
 function showTeamStats(encodedName) {
-  const teamName = decodeURIComponent(encodedName);
+  const teamKey = decodeURIComponent(encodedName);
 
-  // Find the captain for this team name
-  const captain = appState.players.find(p => p.isCaptain && p.teamName === teamName);
+  // New format: encoded captainId
+  const captainById = appState.players.find(p => p.isCaptain && p.id === teamKey);
+  if (captainById) {
+    showTeamStatsByCaptainId(captainById.id);
+    return;
+  }
+
+  // Legacy format: encoded team name
+  const captainByName = appState.players.find(p => p.isCaptain && p.teamName === teamKey);
+  if (!captainByName) return;
+  showTeamStatsByCaptainId(captainByName.id);
+}
+
+function showTeamStatsByCaptainId(captainId) {
+  const captain = appState.players.find(p => p.id === captainId);
   if (!captain) return;
 
   // Collect rounds where this captain's team appears
-  const roundsWithTeam = appState.rounds.filter(r => 
-    r.teams.some(t => t.captainId === captain.id)
+  const roundsWithTeam = appState.rounds.filter(r =>
+    r.teams.some(t => t.captainId === captainId)
   );
   if (roundsWithTeam.length === 0) return;
 
+  const firstTeam = roundsWithTeam[0].teams.find(t => t.captainId === captainId);
+  const teamName = (captain.teamName && captain.teamName.trim()) ? captain.teamName.trim() : (firstTeam?.label || 'Team');
+
   const roundsHtml = roundsWithTeam.map(round => {
-    const team = round.teams.find(t => t.captainId === captain.id);
+    const team = round.teams.find(t => t.captainId === captainId);
     const questionsCount = round.questionsCount || 12;
     const teamQuestions = round.questions[team.id] || [];
     const teamScore = teamQuestions.filter(q => q).length;
@@ -931,6 +1075,10 @@ function handleAddPlayer() {
   if (isCaptain && teamColor) {
     appState.updatePlayer(player.id, { teamColor });
   }
+
+  // Newest player should appear on top with a small insert animation
+  lastAddedPlayerId = player.id;
+  animatePlayerInsert = true;
   
   input.value = '';
   teamNameInput.value = '';
@@ -1000,6 +1148,32 @@ function updatePlayerColor(playerId, color) {
   
   appState.save();
   render();
+}
+
+function pickTeamColor(captainId) {
+  const captain = appState.players.find(p => p.id === captainId);
+  if (!captain || !captain.isCaptain) return;
+
+  const input = document.createElement('input');
+  input.type = 'color';
+  input.value = captain.teamColor || '#3b82f6';
+  input.style.position = 'fixed';
+  input.style.left = '-1000px';
+  input.style.top = '-1000px';
+  document.body.appendChild(input);
+
+  const cleanup = () => {
+    if (input.parentNode) input.parentNode.removeChild(input);
+  };
+
+  input.addEventListener('input', () => {
+    updatePlayerColor(captainId, input.value);
+  });
+
+  input.addEventListener('change', cleanup, { once: true });
+  input.addEventListener('blur', cleanup, { once: true });
+
+  input.click();
 }
 
 function handleStartGame() {
@@ -1154,18 +1328,10 @@ function handleReset() {
 }
 
 function editPlayerName(playerId) {
-  const player = appState.players.find(p => p.id === playerId);
-  if (!player) return;
-
-  const newName = prompt('Enter new player name:', player.name);
-  if (newName !== null && newName.trim() !== player.name) {
-    try {
-      appState.updatePlayerName(playerId, newName);
-      render();
-      showWarning('Player name updated successfully!', 'success');
-    } catch (error) {
-      showWarning(error.message);
-    }
+  const input = document.getElementById(`playerNameInput-${playerId}`);
+  if (input) {
+    input.focus();
+    input.select();
   }
 }
 
@@ -1301,7 +1467,7 @@ function renderTeamsView() {
 
         return `
           <div class="team-card ${team.color ? 'team-card-custom' : `team-card-${teamIndex + 1}`}" ${team.color ? `style="--team-color: ${team.color}"` : ''}>
-            <div class="team-header" ${team.color ? `style="background: linear-gradient(135deg, ${team.color}, ${team.color}dd) !important"` : ''}>
+            <div class="team-header" onclick="pickTeamColor('${team.captainId}')" title="Выбрать цвет команды" ${team.color ? `style="background: linear-gradient(135deg, ${team.color}, ${team.color}dd) !important"` : ''}>
               <h3>${escapeHtml(team.label)}</h3>
             </div>
             <div class="team-members">

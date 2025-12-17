@@ -362,6 +362,22 @@ body {
 .player-name {
   font-weight: 600;
   font-size: 1rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 2px 4px;
+  border-radius: 6px;
+  width: 220px;
+}
+
+.player-name:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  background: rgba(0,0,0,0.03);
+}
+
+.player-name:disabled {
+  opacity: 0.7;
 }
 
 .captain-badge {
@@ -426,6 +442,7 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
   color: white;
+  cursor: pointer;
 }
 
 .team-card .team-members,
@@ -717,6 +734,55 @@ tr[style*="--team-color"] {
   font-weight: 500;
 }
 
+/* Inline rename input should look like text by default */
+input.player-name {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  width: min(320px, 100%);
+}
+
+input.player-name:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  background: var(--bg-color);
+}
+
+input.player-name:disabled {
+  opacity: 0.8;
+}
+
+/* New player insert animation */
+#playersList.players-animate .player-item {
+  animation: playerShiftDown 420ms ease-out;
+}
+
+#playersList.players-animate .player-item.player-inserted {
+  animation: playerInsertFromLeft 520ms ease-out;
+}
+
+@keyframes playerInsertFromLeft {
+  from {
+    transform: translateX(-18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes playerShiftDown {
+  from {
+    transform: translateY(-10px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
 /* Rounds History */
 .rounds-history {
   display: flex;

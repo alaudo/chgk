@@ -757,7 +757,8 @@ class AppState {
       // Re-apply question history
       this.updateQuestionHistory(round);
 
-      // Recalculate all ratings
+      // Recalculate totals and ratings after edits
+      this.recalculateTotalsFromRounds();
       this.recalculateAllRatings();
     }
 
@@ -771,6 +772,32 @@ class AppState {
     }
     this.suspendedRoundState = null;
     this.save();
+  }
+
+  /**
+   * Recalculate per-player aggregates (roundsPlayed/totalScore) from finished rounds.
+   * Needed after editing a past round because updateRatings() is incremental.
+   */
+  recalculateTotalsFromRounds() {
+    this.players.forEach(player => {
+      player.roundsPlayed = 0;
+      player.totalScore = 0;
+    });
+
+    this.rounds.forEach(round => {
+      if (!round || !round.teams) return;
+      if (Object.keys(round.scores || {}).length === 0) return;
+
+      round.teams.forEach(team => {
+        const teamScore = round.scores[team.id] || 0;
+        (team.playerIds || []).forEach(playerId => {
+          const player = this.players.find(p => p.id === playerId);
+          if (!player) return;
+          player.roundsPlayed = (player.roundsPlayed || 0) + 1;
+          player.totalScore = (player.totalScore || 0) + teamScore;
+        });
+      });
+    });
   }
 
   /**
