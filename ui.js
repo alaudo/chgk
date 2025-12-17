@@ -189,10 +189,6 @@ function renderPlayers() {
           ` : ''}
           ${!player.active ? '<span class="inactive-badge">Inactive</span>' : ''}
         </div>
-        <div class="player-stats">
-          <span>Rating: ${player.rating?.toFixed(1) || '0.0'}</span>
-          <span>Rounds: ${player.roundsPlayed || 0}</span>
-        </div>
         <div class="player-actions">
           <button onclick="toggleCaptain('${player.id}')" class="btn-small">
             ${player.isCaptain ? '👤' : '👑'}
@@ -363,12 +359,22 @@ function renderRoundsHistory() {
     .reverse()
     .map(round => {
       const hasScores = Object.keys(round.scores).length > 0;
+      const roundDate = round.timestamp ? new Date(round.timestamp) : null;
+      const roundDateLabel = roundDate
+        ? roundDate.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : '';
       
       return `
         <div class="round-item">
           <div class="round-header">
             <h4>Round ${round.index}</h4>
-            <span class="round-date">${new Date(round.timestamp).toLocaleString()}</span>
+            <span class="round-date">${roundDateLabel}</span>
             <button onclick="editRoundFromHistory('${round.id}')" class="btn-small">Edit</button>
           </div>
           <div class="round-teams">
@@ -1782,6 +1788,51 @@ let timerSettings = {
   additionalTime: 10
 };
 let hasTimerStarted = false;
+let isTimerSettingsCollapsed = null;
+
+function ensureTimerKeyListener() {
+  if (window.timerKeyListener) return;
+
+  window.timerKeyListener = function(e) {
+    const modal = document.getElementById('questionTimerModal');
+    if (!modal) return;
+
+    // Only handle the keys we care about, and only once per key press
+    if (e.repeat) return;
+
+    const isSpace = e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+    const isEnter = e.code === 'Enter' || e.key === 'Enter';
+    if (!isSpace && !isEnter) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isSpace) {
+      const btn = document.getElementById(isTimerRunning ? 'pauseTimerBtn' : 'startTimerBtn');
+      if (btn) btn.click();
+      return;
+    }
+
+    if (isEnter) {
+      const nextBtn = document.getElementById('nextQuestionBtn');
+      if (nextBtn) nextBtn.click();
+    }
+  };
+
+  document.addEventListener('keydown', window.timerKeyListener, true);
+}
+
+function setTimerSettingsCollapsed(collapsed) {
+  isTimerSettingsCollapsed = !!collapsed;
+  const panel = document.getElementById('timerSettingsPanel');
+  const fab = document.getElementById('timerSettingsFab');
+  if (panel) panel.classList.toggle('collapsed', isTimerSettingsCollapsed);
+  if (fab) fab.style.display = isTimerSettingsCollapsed ? 'inline-flex' : 'none';
+}
+
+function toggleTimerSettingsPanel() {
+  setTimerSettingsCollapsed(!isTimerSettingsCollapsed);
+}
 
 function openQuestionTimer() {
   const activeRoundId = appState.currentRoundId || appState.editingRoundId;
@@ -1815,6 +1866,7 @@ function openQuestionTimer() {
     <div class="modal-overlay fullscreen-modal" id="questionTimerModal" onclick="event.stopPropagation()">
       <div class="timer-modal-content">
         <button onclick="closeQuestionTimer()" class="timer-close">&times;</button>
+        <button id="timerSettingsFab" class="timer-settings-fab" onclick="toggleTimerSettingsPanel()" title="Настройки таймера">⚙</button>
         <div class="timer-main-content">
           <h1 class="timer-question-title">Вопрос №<span id="questionNumberDisplay">${globalQuestionNumber}</span></h1>
           <div class="timer-display" id="timerDisplay">${timerSettings.mainTime.toFixed(timerSettings.decimalDigits)}</div>
@@ -1827,7 +1879,10 @@ function openQuestionTimer() {
           <button id="nextQuestionBtn" class="btn btn-primary btn-large" onclick="nextQuestionNow()">⏭ Следующий</button>
         </div>
       <div class="timer-settings-panel" id="timerSettingsPanel">
-        <h4>Настройки таймера</h4>
+        <div class="timer-settings-header">
+          <h4>Настройки таймера</h4>
+          <button class="timer-settings-collapse" onclick="setTimerSettingsCollapsed(true)" title="Свернуть">×</button>
+        </div>
         <div class="timer-setting">
           <label>Десятичные знаки:</label>
           <input type="number" id="decimalDigitsSetting" min="0" max="3" value="${timerSettings.decimalDigits}" onchange="updateTimerSetting('decimalDigits', this.value)">
@@ -1855,6 +1910,14 @@ function openQuestionTimer() {
   const modalDiv = document.createElement('div');
   modalDiv.innerHTML = modalHtml;
   document.body.appendChild(modalDiv.firstElementChild);
+
+  ensureTimerKeyListener();
+
+  if (isTimerSettingsCollapsed === null) {
+    const shouldCollapseByDefault = window.matchMedia('(max-width: 700px), (max-height: 650px)').matches;
+    isTimerSettingsCollapsed = shouldCollapseByDefault;
+  }
+  setTimerSettingsCollapsed(isTimerSettingsCollapsed);
   
   // Render teams table
   renderTimerTeamsTable();
@@ -1930,7 +1993,7 @@ function updateTimerSetting(setting, value) {
 function closeQuestionTimer() {
   stopTimer();
   if (window.timerKeyListener) {
-    document.removeEventListener('keydown', window.timerKeyListener);
+    document.removeEventListener('keydown', window.timerKeyListener, true);
     window.timerKeyListener = null;
   }
   const modal = document.getElementById('questionTimerModal');
@@ -1947,28 +2010,8 @@ function startTimer() {
   document.getElementById('startTimerBtn').style.display = 'none';
   document.getElementById('pauseTimerBtn').style.display = 'inline-block';
   document.getElementById('restartTimerBtn').style.display = 'none';
-  
-  // Add keyboard listener for space bar and enter
-  if (!window.timerKeyListener) {
-    window.timerKeyListener = function(e) {
-      if (!document.getElementById('questionTimerModal')) return;
-      
-      if (e.code === 'Space') {
-        // Don't trigger if user is typing in an input field
-        if (e.target.tagName === 'INPUT') return;
-        e.preventDefault();
-        if (isTimerRunning) {
-          pauseTimer();
-        } else {
-          startTimer();
-        }
-      } else if (e.code === 'Enter') {
-        e.preventDefault();
-        nextQuestionNow();
-      }
-    };
-    document.addEventListener('keydown', window.timerKeyListener);
-  }
+
+  ensureTimerKeyListener();
   
   timerInterval = setInterval(() => {
     timerSeconds -= 0.01;
@@ -2157,5 +2200,7 @@ window.nextQuestionNow = nextQuestionNow;
 window.toggleTimerQuestion = toggleTimerQuestion;
 window.updateTimerSetting = updateTimerSetting;
 window.highlightQuestionColumn = highlightQuestionColumn;
+window.toggleTimerSettingsPanel = toggleTimerSettingsPanel;
+window.setTimerSettingsCollapsed = setTimerSettingsCollapsed;
 window.openHelp = openHelp;
 window.closeHelp = closeHelp;
