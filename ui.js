@@ -66,11 +66,14 @@ function bindEvents() {
   document.getElementById('undoBtn').addEventListener('click', handleUndo);
   document.getElementById('exportBtn').addEventListener('click', handleExport);
   document.getElementById('importBtn').addEventListener('click', handleImport);
+  document.getElementById('exportPlayersBtn')?.addEventListener('click', handleExportPlayers);
+  document.getElementById('importPlayersBtn')?.addEventListener('click', handleImportPlayers);
   document.getElementById('resetGameBtn').addEventListener('click', handleResetGame);
   document.getElementById('resetBtn').addEventListener('click', handleReset);
 
   // File input for import
   document.getElementById('importFile').addEventListener('change', handleImportFile);
+  document.getElementById('importPlayersFile')?.addEventListener('change', handleImportPlayersFile);
 }
 
 /**
@@ -1248,32 +1251,25 @@ function handleApplyScores() {
 }
 
 function handleFinalizeRound() {
-  const progress = appState.getGameProgress();
-  let confirmMessage = 'Finalize this round? Questions will be converted to scores and locked.';
-  
-  if (progress) {
-    if (progress.isLastRound) {
-      confirmMessage = `Завершить последний тур игры (${progress.currentRound}/${progress.totalRounds})? Игра будет завершена.`;
+  const progressBefore = appState.getGameProgress();
+  const wasGameMode = !!progressBefore;
+  const wasLastRound = !!progressBefore?.isLastRound;
+  const roundNumberBefore = progressBefore?.currentRound;
+  const totalRounds = progressBefore?.totalRounds;
+
+  try {
+    appState.finalizeRound();
+    render();
+
+    if (wasGameMode && wasLastRound) {
+      showWarning('Игра завершена! Все туры сыграны.', 'success');
+    } else if (wasGameMode) {
+      showWarning(`Тур ${roundNumberBefore}/${totalRounds} завершен! Начат тур ${roundNumberBefore + 1}/${totalRounds}.`, 'success');
     } else {
-      confirmMessage = `Завершить тур ${progress.currentRound}/${progress.totalRounds}? Автоматически начнется следующий тур.`;
+      showWarning('Round finalized!', 'success');
     }
-  }
-  
-  if (confirm(confirmMessage)) {
-    try {
-      appState.finalizeRound();
-      render();
-      
-      if (progress && progress.isLastRound) {
-        showWarning('Игра завершена! Все туры сыграны.', 'success');
-      } else if (progress) {
-        showWarning(`Тур ${progress.currentRound} завершен! Начат тур ${progress.currentRound + 1}.`, 'success');
-      } else {
-        showWarning('Round finalized!', 'success');
-      }
-    } catch (error) {
-      showWarning(error.message);
-    }
+  } catch (error) {
+    showWarning(error.message);
   }
 }
 
@@ -1297,8 +1293,34 @@ function handleExport() {
   showWarning('Data exported successfully!', 'success');
 }
 
+function handleExportPlayers() {
+  const names = (appState.players || [])
+    .map(p => (p?.name || '').trim())
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    showWarning('Нет игроков для экспорта.', 'info');
+    return;
+  }
+
+  // One player name per line.
+  const text = names.join('\n') + '\n';
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `chgk-players-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showWarning(`Экспортировано игроков: ${names.length}`, 'success');
+}
+
 function handleImport() {
   document.getElementById('importFile').click();
+}
+
+function handleImportPlayers() {
+  document.getElementById('importPlayersFile')?.click();
 }
 
 function handleImportFile(event) {
@@ -1322,6 +1344,66 @@ function handleImportFile(event) {
   reader.readAsText(file);
   
   // Reset input
+  event.target.value = '';
+}
+
+function handleImportPlayersFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const text = String(e.target.result || '');
+      const lines = text
+        .split(/\r?\n/)
+        .map(x => (x || '').trim())
+        .filter(Boolean);
+
+      if (lines.length === 0) {
+        showWarning('Файл пустой: нет игроков для импорта.', 'info');
+        return;
+      }
+
+      const existingLower = new Set((appState.players || []).map(p => (p?.name || '').trim().toLowerCase()).filter(Boolean));
+      let added = 0;
+      let skipped = 0;
+      let failed = 0;
+
+      lines.forEach(nameRaw => {
+        const name = (nameRaw || '').trim();
+        if (!name) return;
+        const key = name.toLowerCase();
+        if (existingLower.has(key)) {
+          skipped++;
+          return;
+        }
+
+        try {
+          appState.addPlayer(name, false, '');
+          existingLower.add(key);
+          added++;
+        } catch (err) {
+          failed++;
+        }
+      });
+
+      appState.save();
+      render();
+
+      if (added === 0 && skipped > 0 && failed === 0) {
+        showWarning(`Импорт: добавлять нечего (все ${skipped} уже есть).`, 'info');
+      } else if (failed > 0) {
+        showWarning(`Импорт игроков: добавлено ${added}, пропущено ${skipped}, ошибок ${failed}.`, 'error');
+      } else {
+        showWarning(`Импорт игроков: добавлено ${added}, пропущено ${skipped}.`, 'success');
+      }
+    } catch (error) {
+      showWarning('Ошибка импорта игроков: ' + (error.message || error), 'error');
+    }
+  };
+
+  reader.readAsText(file);
   event.target.value = '';
 }
 
@@ -1756,14 +1838,21 @@ function handleAddUnassignedPlayers() {
     
     // Add unassigned players to all remaining rounds with random assignment
     remainingRounds.forEach(round => {
-      const teamCount = round.teams.length;
       const shuffledPlayers = shuffle([...unassignedPlayers]);
-      
-      shuffledPlayers.forEach((player, index) => {
-        // Use random team assignment instead of round-robin
-        const teamIndex = Math.floor(Math.random() * teamCount);
-        if (!round.teams[teamIndex].playerIds.includes(player.id)) {
-          round.teams[teamIndex].playerIds.push(player.id);
+
+      shuffledPlayers.forEach(player => {
+        // Keep team sizes as even as possible: always assign to the smallest team
+        // (random among multiple smallest to avoid deterministic patterns).
+        const teams = round.teams;
+        if (!teams || teams.length === 0) return;
+
+        const sizes = teams.map(t => (t.playerIds || []).length);
+        const minSize = Math.min(...sizes);
+        const smallestTeams = teams.filter(t => ((t.playerIds || []).length === minSize));
+        const target = smallestTeams[Math.floor(Math.random() * smallestTeams.length)] || teams[0];
+
+        if (!target.playerIds.includes(player.id)) {
+          target.playerIds.push(player.id);
         }
       });
     });
@@ -1781,6 +1870,9 @@ let timerInterval = null;
 let timerSeconds = 60.0;
 let isTimerRunning = false;
 let isSecondPhase = false;
+let timerTargetMs = null;
+let lastMainBeepSecond = null;
+let lastOvertimeBeepSecond = null;
 let timerSettings = {
   decimalDigits: 2,
   lastQuestionsShown: 2,
@@ -1789,6 +1881,35 @@ let timerSettings = {
 };
 let hasTimerStarted = false;
 let isTimerSettingsCollapsed = null;
+
+function getMonotonicNowMs() {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now();
+  }
+  return Date.now();
+}
+
+function updateTimerDisplay() {
+  const displayEl = document.getElementById('timerDisplay');
+  if (!displayEl) return;
+  const display = Math.max(0, timerSeconds).toFixed(timerSettings.decimalDigits);
+  displayEl.textContent = display;
+}
+
+function setTimerPhase(secondPhase) {
+  isSecondPhase = !!secondPhase;
+  const phaseEl = document.getElementById('phaseLabel');
+  const displayEl = document.getElementById('timerDisplay');
+  if (phaseEl) phaseEl.textContent = isSecondPhase ? 'Записывайте ответы' : 'Основное время';
+  if (displayEl) displayEl.classList.toggle('timer-overtime', isSecondPhase);
+
+  // Reset per-phase beep tracking so we don't suppress the first beep after switching.
+  if (!isSecondPhase) {
+    lastMainBeepSecond = null;
+  } else {
+    lastOvertimeBeepSecond = null;
+  }
+}
 
 function ensureTimerKeyListener() {
   if (window.timerKeyListener) return;
@@ -1985,8 +2106,7 @@ function updateTimerSetting(setting, value) {
   
   // Update display format if decimalDigits changed
   if (setting === 'decimalDigits') {
-    const display = timerSeconds.toFixed(timerSettings.decimalDigits);
-    document.getElementById('timerDisplay').textContent = display;
+    updateTimerDisplay();
   }
 }
 
@@ -2006,6 +2126,10 @@ function startTimer() {
   isTimerRunning = true;
   hasTimerStarted = true;
   playBeep(440, 0.1); // Start beep
+
+  // Start (or resume) by setting an absolute target time based on monotonic clock.
+  // This keeps the countdown accurate even if the event loop is busy.
+  timerTargetMs = getMonotonicNowMs() + (Math.max(0, timerSeconds) * 1000);
   
   document.getElementById('startTimerBtn').style.display = 'none';
   document.getElementById('pauseTimerBtn').style.display = 'inline-block';
@@ -2014,41 +2138,53 @@ function startTimer() {
   ensureTimerKeyListener();
   
   timerInterval = setInterval(() => {
-    timerSeconds -= 0.01;
-    
+    if (!isTimerRunning || timerTargetMs === null) return;
+
+    const now = getMonotonicNowMs();
+    const remaining = (timerTargetMs - now) / 1000;
+    timerSeconds = Math.max(0, remaining);
+
+    // Phase transitions
     if (timerSeconds <= 0) {
       if (!isSecondPhase) {
-        // First phase ended, start second phase
-        isSecondPhase = true;
+        setTimerPhase(true);
         timerSeconds = timerSettings.additionalTime;
-        document.getElementById('phaseLabel').textContent = 'Записывайте ответы';
-        document.getElementById('timerDisplay').classList.add('timer-overtime');
+        timerTargetMs = getMonotonicNowMs() + (Math.max(0, timerSeconds) * 1000);
       } else {
-        // Second phase ended, move to next question
         stopTimer();
         nextQuestion();
         return;
       }
     }
-    
-    // Update display
-    const display = Math.max(0, timerSeconds).toFixed(timerSettings.decimalDigits);
-    document.getElementById('timerDisplay').textContent = display;
-    
-    // Beeps
-    if (!isSecondPhase && timerSeconds <= 10.0 && timerSeconds > 9.99) {
-      playBeep(440, 0.1);
-    } else if (!isSecondPhase && timerSeconds <= 10.0 && Math.floor(timerSeconds * 100) % 100 === 0) {
-      playBeep(440, 0.05); // Short beep every second in last 10 seconds
-    } else if (isSecondPhase && Math.floor(timerSeconds * 100) % 100 === 0 && timerSeconds > 0) {
-      playBeep(880, 0.1); // Louder beep every second in overtime
+
+    updateTimerDisplay();
+
+    // Beeps (time-based, resilient to lag)
+    const remainingWholeSeconds = Math.ceil(timerSeconds);
+
+    if (!isSecondPhase) {
+      if (remainingWholeSeconds <= 10 && remainingWholeSeconds > 0 && remainingWholeSeconds !== lastMainBeepSecond) {
+        // Slightly longer beep at 10 seconds mark, then short beeps each second.
+        playBeep(440, remainingWholeSeconds === 10 ? 0.1 : 0.05);
+        lastMainBeepSecond = remainingWholeSeconds;
+      }
+    } else {
+      if (remainingWholeSeconds > 0 && remainingWholeSeconds !== lastOvertimeBeepSecond) {
+        playBeep(880, 0.1);
+        lastOvertimeBeepSecond = remainingWholeSeconds;
+      }
     }
-  }, 10); // Update every 10ms for smooth countdown
+  }, 50); // Lower frequency; actual countdown uses real time.
 }
 
 function pauseTimer() {
   if (!isTimerRunning) return;
   
+  // Capture accurate remaining time at the moment of pause.
+  if (timerTargetMs !== null) {
+    const now = getMonotonicNowMs();
+    timerSeconds = Math.max(0, (timerTargetMs - now) / 1000);
+  }
   stopTimer();
   const startBtn = document.getElementById('startTimerBtn');
   startBtn.innerHTML = '▶ Продолжить';
@@ -2060,12 +2196,10 @@ function pauseTimer() {
 function restartTimer() {
   stopTimer();
   timerSeconds = timerSettings.mainTime;
-  isSecondPhase = false;
+  setTimerPhase(false);
   hasTimerStarted = false;
-  const display = timerSettings.mainTime.toFixed(timerSettings.decimalDigits);
-  document.getElementById('timerDisplay').textContent = display;
-  document.getElementById('timerDisplay').classList.remove('timer-overtime');
-  document.getElementById('phaseLabel').textContent = 'Основное время';
+  timerTargetMs = null;
+  updateTimerDisplay();
   const startBtn = document.getElementById('startTimerBtn');
   startBtn.innerHTML = '▶ Начать';
   startBtn.style.display = 'inline-block';
@@ -2079,6 +2213,7 @@ function stopTimer() {
     timerInterval = null;
   }
   isTimerRunning = false;
+  timerTargetMs = null;
 }
 
 function nextQuestion() {

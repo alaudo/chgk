@@ -30,7 +30,97 @@ function generateTeams(captainIds, nonCaptains, options = {}) {
     teams[teamIndex].playerIds.push(player.id);
   });
 
+  // Safety: ensure each non-captain is assigned once and team sizes stay balanced
+  normalizeAndBalanceTeams(teams, captainIds, nonCaptains);
+
   return teams;
+}
+
+function normalizeAndBalanceTeams(teams, captainIds, nonCaptains) {
+  if (!Array.isArray(teams) || teams.length === 0) return;
+
+  const captainIdSet = new Set(captainIds || []);
+  const allowedNonCaptainIds = new Set((nonCaptains || []).map(p => p.id));
+  const seenNonCaptainIds = new Set();
+
+  // 1) Clean duplicates / invalid ids and ensure captain is present
+  teams.forEach(team => {
+    const captainId = team.captainId;
+    const cleaned = [];
+    const ids = Array.isArray(team.playerIds) ? team.playerIds : [];
+
+    for (const id of ids) {
+      if (id === captainId) continue;
+      if (captainIdSet.has(id)) continue; // never place captains as non-captains
+      if (!allowedNonCaptainIds.has(id)) continue;
+      if (seenNonCaptainIds.has(id)) continue;
+      seenNonCaptainIds.add(id);
+      cleaned.push(id);
+    }
+
+    team.playerIds = [captainId, ...cleaned];
+  });
+
+  // 2) Add any missing non-captains to the smallest teams
+  const missing = (nonCaptains || [])
+    .map(p => p.id)
+    .filter(id => !seenNonCaptainIds.has(id));
+
+  missing.forEach(id => {
+    const targetTeam = teams.reduce((best, current) => {
+      if (!best) return current;
+      return (current.playerIds.length < best.playerIds.length) ? current : best;
+    }, null);
+
+    if (targetTeam) {
+      targetTeam.playerIds.push(id);
+      seenNonCaptainIds.add(id);
+    }
+  });
+
+  // 3) Enforce size balance: no team may exceed another by 2+ players
+  rebalanceTeamsToMaxDiffOne(teams);
+}
+
+function rebalanceTeamsToMaxDiffOne(teams) {
+  const maxMoves = 10000;
+  let moves = 0;
+
+  const getSizes = () => teams.map(t => (Array.isArray(t.playerIds) ? t.playerIds.length : 0));
+  const getMaxMin = () => {
+    const sizes = getSizes();
+    return {
+      max: Math.max(...sizes),
+      min: Math.min(...sizes)
+    };
+  };
+
+  while (moves < maxMoves) {
+    const { max, min } = getMaxMin();
+    if (max - min <= 1) break;
+
+    const largest = teams.reduce((best, t) => (!best || t.playerIds.length > best.playerIds.length) ? t : best, null);
+    const smallest = teams.reduce((best, t) => (!best || t.playerIds.length < best.playerIds.length) ? t : best, null);
+    if (!largest || !smallest) break;
+
+    // Move one non-captain from largest to smallest
+    const movableIndex = largest.playerIds.findIndex(id => id !== largest.captainId);
+    if (movableIndex === -1) break;
+
+    // Prefer moving the last non-captain to keep captains at index 0
+    let moveIdx = -1;
+    for (let i = largest.playerIds.length - 1; i >= 0; i--) {
+      if (largest.playerIds[i] !== largest.captainId) {
+        moveIdx = i;
+        break;
+      }
+    }
+    if (moveIdx === -1) break;
+
+    const [moved] = largest.playerIds.splice(moveIdx, 1);
+    smallest.playerIds.push(moved);
+    moves++;
+  }
 }
 
 /**
@@ -272,24 +362,9 @@ function generateGameRounds(numRounds, captainIds, nonCaptains, options = {}) {
       const teamIndex = index % teamCount;
       teams[teamIndex].playerIds.push(player.id);
     });
-    
-    // Verify all non-captains are assigned
-    const assignedNonCaptains = new Set();
-    teams.forEach(team => {
-      team.playerIds.forEach(playerId => {
-        if (playerId !== team.captainId) {
-          assignedNonCaptains.add(playerId);
-        }
-      });
-    });
-    
-    // Add any missing non-captains
-    nonCaptains.forEach(player => {
-      if (!assignedNonCaptains.has(player.id)) {
-        const teamIndex = Math.floor(Math.random() * teamCount);
-        teams[teamIndex].playerIds.push(player.id);
-      }
-    });
+
+    // Safety: ensure each non-captain is assigned once and team sizes stay balanced
+    normalizeAndBalanceTeams(teams, captainIds, nonCaptains);
     
     currentRounds.push({
       teams: teams,
