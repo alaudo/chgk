@@ -9,10 +9,23 @@
 </head>
 <body>
   <div class="container">
-    <header class="header">
-      <h1>🦉 ЧГК: Турнир</h1>
-      <p class="subtitle">Ввод команд и учёт очков по турам</p>
+    <header class="header help-left" id="pageHeader">
       <button class="help-btn" onclick="openHelp()" title="Помощь">❓</button>
+      <button class="collapse-btn header-collapse-btn" type="button" onclick="toggleHeaderCollapse()" title="Свернуть">−</button>
+      <h1>🦉 ЧГК: Турнир</h1>
+      <nav class="header-nav" aria-label="Навигация">
+        <a href="index.html">Инструменты</a>
+        <span class="header-nav-sep">|</span>
+        <a href="peremeshki.html">Перемешка</a>
+        <span class="header-nav-sep">|</span>
+        <a href="chgk.html" aria-current="page">Турнир</a>
+        <span class="header-nav-sep">|</span>
+        <a href="timer.html">Таймер</a>
+      </nav>
+      <div class="header-body">
+        <p class="subtitle">Ввод команд и учёт очков по турам</p>
+        <img class="page-main-image" src="chgk.png" alt="ЧГК: Турнир (команды)">
+      </div>
     </header>
 
     <div id="warningContainer" class="warning-container"></div>
@@ -123,33 +136,101 @@
       </div>
       <div class="modal-body help-modal-body">
         <section class="help-section">
-          <h3>🚀 Быстрый старт</h3>
-          <ol>
-            <li>Добавьте команды (название + цвет).</li>
-            <li>Нажмите «Начать тур».</li>
-            <li>Отмечайте правильные ответы по вопросам (чекбоксы).</li>
-            <li>Нажмите «Завершить тур» — тур попадёт в историю, а следующий откроется автоматически.</li>
-          </ol>
+          <h3>1) 👥 Команды</h3>
+          <ul>
+            <li><strong>Добавление:</strong> введите название → выберите цвет → «Добавить».</li>
+            <li><strong>Цвет</strong> помогает быстро сверять ответы/таблицы (можно сделать как на бланках).</li>
+            <li>Команды можно удалять/переименовывать в списке.</li>
+          </ul>
+          <div class="help-thumbs" aria-label="Скриншоты: Команды">
+            <button type="button" class="help-thumb-link" data-viewer-src="img/chgk-1.jpg">
+              <img class="help-thumb" src="img/chgk-1.jpg" alt="Турнир — Команды" loading="lazy">
+            </button>
+          </div>
         </section>
+
         <section class="help-section">
-          <h3>⏱️ Таймер</h3>
+          <h3>2) 🎮 Игра</h3>
+          <ul>
+            <li>Задайте <strong>вопросов в туре</strong> и <strong>туров в игре</strong>.</li>
+            <li><strong>🎮 Начать игру</strong> — создаёт фиксированную последовательность туров (удобно для турнира).</li>
+            <li>Можно играть и «одиночными турами», просто нажимая «Начать тур» без режима игры.</li>
+          </ul>
+          <div class="help-thumbs" aria-label="Скриншоты: Игра">
+            <button type="button" class="help-thumb-link" data-viewer-src="img/chgk-2.jpg">
+              <img class="help-thumb" src="img/chgk-2.jpg" alt="Турнир — Игра" loading="lazy">
+            </button>
+          </div>
+        </section>
+
+        <section class="help-section">
+          <h3>3) ✅ Текущий тур</h3>
+          <ul>
+            <li><strong>Начать тур</strong> — открывает ввод ответов по вопросам.</li>
+            <li><strong>Чекбоксы</strong> — отмечайте взятые вопросы; начисление идёт автоматически.</li>
+            <li><strong>⏱️ Вопрос</strong> — запускает таймер вопроса.</li>
+            <li><strong>Завершить тур</strong> — фиксирует результаты и переносит тур в историю.</li>
+          </ul>
+          <h4>🎹 Горячие клавиши в таймере</h4>
           <ul>
             <li><strong>Пробел</strong> — старт/пауза/продолжить</li>
             <li><strong>Enter</strong> — следующий вопрос</li>
-            <li><strong>Esc</strong> — закрыть</li>
+            <li><strong>Backspace</strong> — предыдущий вопрос</li>
           </ul>
+          <div class="help-thumbs" aria-label="Скриншоты: Текущий тур">
+            <button type="button" class="help-thumb-link" data-viewer-src="img/chgk-3.jpg">
+              <img class="help-thumb" src="img/chgk-3.jpg" alt="Турнир — Текущий тур" loading="lazy">
+            </button>
+          </div>
+
+          <h4>📷 Скриншот таймера</h4>
+          <div class="help-thumbs" aria-label="Скриншоты: Таймер">
+            <button type="button" class="help-thumb-link" data-viewer-src="img/timer-1.jpg">
+              <img class="help-thumb" src="img/timer-1.jpg" alt="Таймер — интерфейс" loading="lazy">
+            </button>
+          </div>
         </section>
+
         <section class="help-section">
-          <h3>💾 Данные</h3>
+          <h3>4) 🗂️ История туров</h3>
           <ul>
-            <li>Сохраняются автоматически в браузере.</li>
-            <li>Экспорт/импорт — резервная копия и перенос.</li>
+            <li>Здесь отображаются все завершённые туры.</li>
+            <li>Можно открыть <strong>Edit</strong>, исправить ответы и нажать <strong>Сохранить изменения</strong> — результаты пересчитаются.</li>
           </ul>
+          <div class="help-thumbs" aria-label="Скриншоты: История туров">
+            <button type="button" class="help-thumb-link" data-viewer-src="img/chgk-4.jpg">
+              <img class="help-thumb" src="img/chgk-4.jpg" alt="Турнир — История туров" loading="lazy">
+            </button>
+          </div>
+        </section>
+
+        <section class="help-section">
+          <h3>5) 📊 Результаты</h3>
+          <ul>
+            <li>Таблица рейтинга пересчитывается автоматически после каждого тура и после редактирования истории.</li>
+            <li>Кликайте по строкам/названиям (где доступно), чтобы открыть детали по турам.</li>
+            <li><strong>Экспорт игры (TSV)</strong> и <strong>TSV (транспонир.)</strong> — удобны для вставки в Excel/Google Sheets.</li>
+          </ul>
+          <div class="help-thumbs" aria-label="Скриншоты: Результаты">
+            <button type="button" class="help-thumb-link" data-viewer-src="img/chgk-5.jpg">
+              <img class="help-thumb" src="img/chgk-5.jpg" alt="Турнир — Результаты" loading="lazy">
+            </button>
+          </div>
         </section>
       </div>
     </div>
   </div>
 
+  <script src="imageViewer.js"></script>
   <script src="chgk.js"></script>
+  <script>
+    function toggleHeaderCollapse() {
+      const header = document.getElementById('pageHeader');
+      if (!header) return;
+      header.classList.toggle('collapsed');
+      const btn = header.querySelector('.header-collapse-btn');
+      if (btn) btn.textContent = header.classList.contains('collapsed') ? '+' : '−';
+    }
+  </script>
 </body>
 </html>

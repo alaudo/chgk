@@ -408,6 +408,16 @@
     mount.innerHTML = `
       <div class="modal-overlay fullscreen-modal" id="questionTimerModal" onclick="event.stopPropagation()">
         <div class="timer-modal-content">
+          <img class="timer-floating-owl" src="timer.png" alt="" aria-hidden="true" data-viewer-src="img/timer-1.jpg">
+          <nav class="header-nav header-nav--inverse" aria-label="Навигация">
+            <a href="index.html">Инструменты</a>
+            <span class="header-nav-sep">|</span>
+            <a href="peremeshki.html">Перемешка</a>
+            <span class="header-nav-sep">|</span>
+            <a href="chgk.html">Турнир</a>
+            <span class="header-nav-sep">|</span>
+            <a href="timer.html" aria-current="page">Таймер</a>
+          </nav>
           <button id="timerSettingsFab" class="timer-settings-fab" title="Настройки таймера">⚙</button>
 
           <div class="timer-main-content">
