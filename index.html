@@ -1,311 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ЧГК: Перемешка</title>
+  <title>ЧГК: Инструменты</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
     <header class="header">
-      <h1>🦉 ЧГК: Перемешка</h1>
-      <p class="subtitle">Генератор случайных команд и учёта очков</p>
-      <button class="help-btn" onclick="openHelp()" title="Помощь">❓</button>
+      <h1>🦉 ЧГК: Инструменты</h1>
+      <p class="subtitle">Выберите инструмент</p>
     </header>
 
-    <!-- Warning Container -->
-    <div id="warningContainer" class="warning-container"></div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-      
-      <!-- Players Section -->
-      <section class="section" id="playersSection">
-        <div class="section-header">
-          <h2>Игроки</h2>
-          <button class="collapse-btn" onclick="toggleSection('playersSection')">−</button>
-        </div>
-        <div class="section-body">
-          <div class="player-input">
-            <input 
-              type="text" 
-              id="playerNameInput" 
-              placeholder="Имя игрока" 
-              class="input">
-            <label class="checkbox-label">
-              <input type="checkbox" id="isCaptainCheck" onchange="toggleTeamNameInput()">
-              Капитан
-            </label>
-            <div id="captainInputs" style="display: none;">
-              <input 
-                type="text" 
-                id="teamNameInput" 
-                placeholder="Название команды" 
-                class="input input-small">
-              <input 
-                type="color" 
-                id="teamColorInput" 
-                value="#3b82f6"
-                class="color-input"
-                title="Цвет команды">
+    <section class="section">
+      <h2>Инструменты</h2>
+      <div class="teams-container" style="margin-top: 15px;">
+        <a class="tool-tile-link team-card team-card-1" href="peremeshki.html" aria-label="Открыть: Перемешка">
+          <div class="team-header" style="display:flex; align-items:center; justify-content:space-between; gap: 14px;">
+            <div>
+              <h3 style="margin:0;">🦉 Перемешка</h3>
+              <div style="opacity:0.9; font-weight:600; margin-top:6px;">Случайные команды + очки</div>
             </div>
-            <button id="addPlayerBtn" class="btn btn-primary">Добавить</button>
-          </div>
-          <div id="playersList" class="players-list"></div>
-        </div>
-      </section>
+            <svg width="72" height="72" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex:0 0 auto;">
+              <path d="M18 44C18 28.536 30.536 16 46 16H50C65.464 16 78 28.536 78 44V48C78 69.539 62.539 86 41 86H36C26.059 86 18 77.941 18 68V44Z" fill="currentColor" opacity="0.18"/>
+              <path d="M27 39C27 28.507 35.507 20 46 20H50C60.493 20 69 28.507 69 39V48C69 65.121 55.121 79 38 79H36C30.477 79 26 74.523 26 69V39Z" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <path d="M33 42C33 34.268 39.268 28 47 28H49C56.732 28 63 34.268 63 42" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="40" cy="48" r="10" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <circle cx="58" cy="48" r="10" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <path d="M47 52L49 52" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
+              <path d="M48 55L41 63H55L48 55Z" fill="currentColor" opacity="0.95"/>
+              <path d="M30 68C35 73 41 76 48 76C55 76 61 73 66 68" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
 
-      <!-- Game Section -->
-      <section class="section" id="gameSection">
-        <div class="section-header">
-          <h2>🎮 Игра</h2>
-          <button class="collapse-btn" onclick="toggleSection('gameSection')">−</button>
-        </div>
-        <div class="section-body">
-          <div class="settings-row">
-            <label for="questionsPerRound">Вопросов в туре:</label>
-            <input type="number" id="questionsPerRound" min="1" max="50" value="12" class="input-small">
+              <!-- Shuffle glyph -->
+              <path d="M22 24H34" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M34 24L30 20" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M34 24L30 28" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M74 72H62" stroke="currentColor" opacity="0.75" stroke-width="4" stroke-linecap="round"/>
+              <path d="M62 72L66 68" stroke="currentColor" opacity="0.75" stroke-width="4" stroke-linecap="round"/>
+              <path d="M62 72L66 76" stroke="currentColor" opacity="0.75" stroke-width="4" stroke-linecap="round"/>
+            </svg>
           </div>
-            <div class="settings-row">
-              <label for="gameRoundsInput">Туров в игре:</label>
-              <input type="number" id="gameRoundsInput" min="1" max="50" value="5" class="input-small">
+          <div class="team-members" style="margin:0;">
+            <p style="margin:0 0 12px 0; color: var(--text-secondary);">
+              Для домашних игр и вечеров: добавьте игроков, назначьте капитанов, быстро перемешайте составы и отмечайте правильные ответы по вопросам.
+            </p>
+          </div>
+        </a>
+
+        <a class="tool-tile-link team-card team-card-2" href="chgk.html" aria-label="Открыть: Классическое ЧГК">
+          <div class="team-header" style="display:flex; align-items:center; justify-content:space-between; gap: 14px;">
+            <div>
+              <h3 style="margin:0;">🦉 Классическое ЧГК</h3>
+              <div style="opacity:0.9; font-weight:600; margin-top:6px;">Турнир по командам</div>
             </div>
-          <div class="settings-row">
-            <label class="checkbox-label">
-              <input type="checkbox" id="allowManualMove">
-              Разрешить перемещение игроков вручную
-            </label>
+            <svg width="72" height="72" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex:0 0 auto;">
+              <path d="M22 44C22 29.641 33.641 18 48 18C62.359 18 74 29.641 74 44V52C74 69.121 60.121 83 43 83H37C29.82 83 24 77.18 24 70V44" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
+              <path d="M30 40C30 31.163 37.163 24 46 24H50C58.837 24 66 31.163 66 40" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="39" cy="48" r="9" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <circle cx="57" cy="48" r="9" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <path d="M45 63H51" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
+              <path d="M48 56L42 62H54L48 56Z" fill="currentColor" opacity="0.95"/>
+              <path d="M31 68C34.5 70.5 40 73 48 73C56 73 61.5 70.5 65 68" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
+              <path d="M74 30L82 24" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M76 40H86" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M22 30L14 24" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M20 40H10" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+
+              <!-- Trophy glyph -->
+              <path d="M36 80H60" stroke="currentColor" opacity="0.85" stroke-width="4" stroke-linecap="round"/>
+              <path d="M42 80V74H54V80" stroke="currentColor" opacity="0.85" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M40 68H56V74H40V68Z" stroke="currentColor" opacity="0.85" stroke-width="4" stroke-linejoin="round"/>
+              <path d="M40 68C36 66 34 62 34 58V54H40" stroke="currentColor" opacity="0.75" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M56 68C60 66 62 62 62 58V54H56" stroke="currentColor" opacity="0.75" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </div>
-          <div class="settings-row">
-            <label class="checkbox-label">
-              <input type="checkbox" id="hideCaptainsCheck" onchange="handleHideCaptainsChange()">
-              Скрыть капитанов из результатов
-            </label>
+          <div class="team-members" style="margin:0;">
+            <p style="margin:0 0 12px 0; color: var(--text-secondary);">
+              Для ведущего турнира: внесите команды, ведите туры с абсолютной нумерацией вопросов, смотрите историю и экспортируйте результаты.
+            </p>
           </div>
-          <div id="gameInfo" class="game-info"></div>
-          <div id="gameControls" class="actions">
-            <div class="game-presets">
-              <p class="presets-label">Быстрая настройка:</p>
-              <div class="preset-buttons">
-                <button class="btn btn-secondary btn-small" onclick="setGamePreset(3, 12)">3 тура × 12 вопросов</button>
-                <button class="btn btn-secondary btn-small" onclick="setGamePreset(6, 6)">6 туров × 6 вопросов</button>
-              </div>
+        </a>
+
+        <a class="tool-tile-link team-card team-card-3" href="timer.html" aria-label="Открыть: Таймер ЧГК">
+          <div class="team-header" style="display:flex; align-items:center; justify-content:space-between; gap: 14px;">
+            <div>
+              <h3 style="margin:0;">🦉 Таймер ЧГК</h3>
+              <div style="opacity:0.9; font-weight:600; margin-top:6px;">Вопрос: 60 + 10 и пресеты</div>
             </div>
+            <svg width="72" height="72" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex:0 0 auto;">
+              <path d="M26 42C26 30.954 34.954 22 46 22H50C61.046 22 70 30.954 70 42V52C70 67.464 57.464 80 42 80H38C31.373 80 26 74.627 26 68V42Z" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <circle cx="40" cy="48" r="9" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <circle cx="58" cy="48" r="9" stroke="currentColor" opacity="0.95" stroke-width="4"/>
+              <path d="M48 56L42 62H54L48 56Z" fill="currentColor" opacity="0.95"/>
+              <path d="M34 68C38 71.5 43 73.5 48 73.5C53 73.5 58 71.5 62 68" stroke="currentColor" opacity="0.95" stroke-width="4" stroke-linecap="round"/>
+              <path d="M76 26V36" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M81 31H71" stroke="currentColor" opacity="0.9" stroke-width="4" stroke-linecap="round"/>
+              <path d="M74 66C74 57.716 80.716 51 89 51" stroke="currentColor" opacity="0.7" stroke-width="4" stroke-linecap="round"/>
 
-            <button id="startGameBtn" class="btn btn-primary">Начать новую игру</button>
+              <!-- Clock glyph -->
+              <circle cx="80" cy="60" r="10" stroke="currentColor" opacity="0.55" stroke-width="4"/>
+              <path d="M80 60V54" stroke="currentColor" opacity="0.55" stroke-width="4" stroke-linecap="round"/>
+              <path d="M80 60L85 62" stroke="currentColor" opacity="0.55" stroke-width="4" stroke-linecap="round"/>
+            </svg>
           </div>
-          <div class="actions" style="margin-top: 1rem;">
-            <button id="generateTeamsBtn" class="btn btn-primary">Создать новые команды</button>
-            <button id="reshuffleBtn" class="btn btn-secondary">Перемешать</button>
+          <div class="team-members" style="margin:0;">
+            <p style="margin:0 0 12px 0; color: var(--text-secondary);">
+              Когда нужен только таймер на экране: запуск/пауза, предыдущий/следующий вопрос, автоматический переход в доп. время и сохранение настроек.
+            </p>
           </div>
-        </div>
-      </section>
+        </a>
+      </div>
+    </section>
 
-      <!-- Current Round Section -->
-      <section id="currentRoundSection" class="section">
-        <div class="section-header">
-          <h2 id="currentRoundTitle">Текущий тур</h2>
-          <button class="collapse-btn" onclick="toggleSection('currentRoundSection')">−</button>
-        </div>
-        <div class="section-body">
-          <div class="round-header-bar">
-            <div class="round-header-actions">
-              <button id="reshuffleCurrentBtn" class="btn btn-secondary btn-small" style="display: none;">🔀 Перемешать текущий тур</button>
-              <button id="addUnassignedPlayersBtn" class="btn btn-secondary btn-small" style="display: none;">➕ Добавить неназначенных</button>
-              <button id="questionTimerBtn" class="btn btn-primary btn-small" style="display: none;">⏱️ Вопрос</button>
-            </div>
-            <div class="view-switcher">
-              <button id="viewTeamsBtn" class="btn btn-secondary active">Составы</button>
-              <button id="viewScoringBtn" class="btn btn-secondary">Очки</button>
-            </div>
-          </div>
-          <div id="currentRoundContainer" class="current-round-container"></div>
-          <div class="actions" id="roundActions">
-            <button id="finalizeRoundBtn" class="btn btn-success">Завершить тур</button>
-            <button id="saveEditedRoundBtn" class="btn btn-success" style="display: none;">Сохранить изменения</button>
-            <button id="cancelEditRoundBtn" class="btn btn-secondary" style="display: none;">Отмена</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Rounds History -->
-      <section class="section" id="historySection">
-        <div class="section-header">
-          <h2>История туров</h2>
-          <button class="collapse-btn" onclick="toggleSection('historySection')">−</button>
-        </div>
-        <div class="section-body">
-          <div id="roundsHistory" class="rounds-history"></div>
-        </div>
-      </section>
-
-      <!-- Leaderboard -->
-      <section class="section" id="leaderboardSection">
-        <div class="section-header">
-          <h2>📊 Результаты</h2>
-          <button class="collapse-btn" onclick="toggleSection('leaderboardSection')">−</button>
-        </div>
-        <div class="section-body">
-          <div class="leaderboard-tabs">
-            <button id="playersTabBtn" class="tab-btn active" onclick="switchLeaderboardTab('players')">Игроки</button>
-            <button id="teamsTabBtn" class="tab-btn" onclick="switchLeaderboardTab('teams')">Команды</button>
-            <button id="drawTabBtn" class="tab-btn" onclick="switchLeaderboardTab('draw')">Жеребьёвка</button>
-          </div>
-          <div id="leaderboard" class="leaderboard"></div>
-        </div>
-      </section>
-
-      <!-- Actions -->
-      <section class="section" id="actionsSection">
-        <div class="section-header">
-          <h2>Действия</h2>
-          <button class="collapse-btn" onclick="toggleSection('actionsSection')">−</button>
-        </div>
-        <div class="section-body">
-          <div class="actions">
-            <button id="undoBtn" class="btn btn-secondary">Отменить последний тур</button>
-            <button id="resetGameBtn" class="btn btn-warning">Сбросить туры (оставить игроков)</button>
-            <button id="exportBtn" class="btn btn-secondary">Экспорт</button>
-            <button id="importBtn" class="btn btn-secondary">Импорт</button>
-            <button id="exportPlayersBtn" class="btn btn-secondary">Экспорт игроков</button>
-            <button id="importPlayersBtn" class="btn btn-secondary">Импорт игроков</button>
-            <button id="resetBtn" class="btn btn-danger">Полный сброс</button>
-            <input type="file" id="importFile" accept=".json" style="display: none;">
-            <input type="file" id="importPlayersFile" accept=".txt,text/plain" style="display: none;">
-          </div>
-        </div>
-      </section>
-
-    </div>
-
-    <!-- Footer -->
     <footer class="footer">
-      <p>Перемешки и таймер | (c) Alexander Galkin, Hamburg | Данные хранятся в локальном хранилище вашего браузера и не передаются на сервер.</p>
+      <p>ЧГК: Инструменты | (c) Alexander Galkin, Hamburg | Данные хранятся в локальном хранилище вашего браузера и не передаются на сервер</p>
     </footer>
   </div>
-
-  <!-- Help Modal -->
-  <div class="modal-overlay" id="helpModal" style="display: none;" onclick="closeHelp()">
-    <div class="modal-content help-modal-content" onclick="event.stopPropagation()">
-      <div class="modal-header">
-        <h2>📖 Инструкция по использованию</h2>
-        <button class="modal-close" onclick="closeHelp()">&times;</button>
-      </div>
-      <div class="modal-body help-modal-body">
-        <section class="help-section">
-          <h3>🚀 Быстрый старт (правильный поток)</h3>
-          <ol>
-            <li><strong>Добавьте всех игроков.</strong> Введите имя и нажмите Enter или кнопку «Добавить».</li>
-            <li><strong>Назначьте капитанов.</strong> Отметьте «Капитан» при добавлении или переключите статус кнопкой 👑/👤 в списке.</li>
-            <li><strong>Назовите команды и задайте цвет.</strong> Для капитана можно задать название и цвет — он будет использоваться в командах, жеребьёвке и подсказках.</li>
-            <li><strong>Выберите режим:</strong>
-              <ul>
-                <li><strong>Один тур:</strong> «Создать новые команды» → сыграть → отметить ответы → «Завершить тур».</li>
-                <li><strong>Игра (несколько туров):</strong> задайте «Туров в игре» → «Начать новую игру» (все туры генерируются заранее).</li>
-              </ul>
-            </li>
-            <li><strong>Во время тура</strong> отметьте правильные ответы во вкладке «Очки» и завершите тур.</li>
-          </ol>
-        </section>
-
-        <section class="help-section">
-          <h3>👥 Игроки и команды</h3>
-          <ul>
-            <li><strong>Редактирование имени:</strong> клик по имени в списке, Enter — сохранить, Esc — отменить.</li>
-            <li><strong>Цвет команды:</strong> клик по заголовку карточки команды — выбор цвета; можно использовать тот же цвет, что и на бланках ответов.</li>
-            <li><strong>Скрыть капитанов:</strong> настройка «Скрыть капитанов из результатов» убирает капитанов из рейтинга игроков и жеребьёвки.</li>
-          </ul>
-          <p><strong>💡 Подсказки:</strong></p>
-          <ul>
-            <li>Если нужно <strong>задать количество команд</strong>, можно добавить «фейковых капитанов» (например, «Капитан 1…»), а затем включить «Скрыть капитанов», чтобы они не мешали в результатах.</li>
-            <li>Если ведущий раздаёт <strong>цветные бланки</strong>, удобно назначить тот же цвет команде — так проще сверять ответы в любой таблице.</li>
-          </ul>
-        </section>
-
-        <section class="help-section">
-          <h3>✅ Проведение тура</h3>
-          <ul>
-            <li><strong>Вкладка «Составы»</strong> — проверка команд; при включенной настройке можно вручную перемещать игроков.</li>
-            <li><strong>Вкладка «Очки»</strong> — отмечайте правильные ответы (чекбоксы по вопросам).</li>
-            <li><strong>История туров</strong> — можно открыть «Edit» и поправить результаты; после «Сохранить изменения» все рейтинги пересчитаются.</li>
-          </ul>
-        </section>
-
-        <section class="help-section">
-          <h3>⏱️ Таймер вопроса</h3>
-          <p>Откройте таймер кнопкой «⏱️ Вопрос» в текущем туре. Слева — настройки, справа — мини-таблица отметок (по ней можно кликать ✓/✗).</p>
-          <h4>🎹 Горячие клавиши</h4>
-          <ul>
-            <li><strong>Пробел</strong> — старт / пауза / продолжить (всегда работает в таймере).</li>
-            <li><strong>Enter</strong> — «Следующий вопрос» (перейти дальше и сбросить таймер).</li>
-            <li><strong>Esc</strong> — закрыть таймер (если уже запускали — попросит подтверждение).</li>
-          </ul>
-          <h4>⚙ Настройка</h4>
-          <ul>
-            <li><strong>Основное время</strong> и <strong>доп. время</strong> задаются в секундах (типично: 60 + 10).</li>
-            <li><strong>Десятичные знаки</strong> управляют точностью отображения.</li>
-            <li><strong>Показывать вопросов</strong> — сколько последних вопросов видно в мини-таблице.</li>
-            <li>На маленьких экранах панель настроек можно <strong>свернуть</strong> (×) и вернуть через плавающую кнопку <strong>⚙</strong>.</li>
-          </ul>
-        </section>
-
-        <section class="help-section">
-          <h3>📊 Результаты и аналитика</h3>
-          <ul>
-            <li><strong>Игроки:</strong> рейтинг и подробная статистика по игроку (клик по имени в таблице результатов).</li>
-            <li><strong>Команды:</strong> суммарные результаты по командам капитанов (клик по названию команды — детали по турам).</li>
-            <li><strong>Жеребьёвка:</strong> распределение игроков по командам во всех турах; в игровом режиме показывает и будущие туры.</li>
-          </ul>
-        </section>
-
-        <section class="help-section">
-          <h3>💾 Данные</h3>
-          <ul>
-            <li>Все данные сохраняются локально в браузере автоматически.</li>
-            <li><strong>Экспорт</strong> — сохраните игру в файл (рекомендуется после важной серии).</li>
-            <li><strong>Импорт</strong> — восстановление из файла (заменяет текущие данные).</li>
-          </ul>
-        </section>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="storage.js"></script>
-  <script src="algorithms.js"></script>
-  <script src="app.js"></script>
-  <script src="ui.js"></script>
-  <script>
-    // Initialize app on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      appState.init();
-      
-      // Restore form values
-      document.getElementById('questionsPerRound').value = appState.settings.questionsPerRound || 12;
-      document.getElementById('gameRoundsInput').value = appState.settings.gameRounds || 5;
-      
-      // Restore checkbox states
-      if (document.getElementById('hideCaptainsCheck')) {
-        document.getElementById('hideCaptainsCheck').checked = appState.settings.hideCaptains || false;
-      }
-      if (document.getElementById('allowManualMove')) {
-        document.getElementById('allowManualMove').checked = appState.uiState.allowManualMove || false;
-      }
-      
-      initUI();
-    });
-
-    // Flush debounced saves when the user reloads/navigates away.
-    window.addEventListener('beforeunload', () => {
-      try {
-        appState.saveImmediate();
-      } catch (e) {
-        // ignore
-      }
-    });
-  </script>
 </body>
 </html>

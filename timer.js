@@ -452,6 +452,8 @@
               <input type="number" id="additionalTimeSetting" min="0" max="600" value="${timerSettings.additionalTime}">
             </div>
           </div>
+
+          <footer class="timer-page-footer">ЧГК: Таймер | (c) Alexander Galkin, Hamburg | Данные хранятся в локальном хранилище вашего браузера и не передаются на сервер</footer>
         </div>
       </div>
     `;

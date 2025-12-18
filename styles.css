@@ -899,6 +899,24 @@ input.player-name:disabled {
   font-size: 0.85rem;
 }
 
+/* Launcher tiles (index.html) */
+.tool-tile-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tool-tile-link:hover {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 3px;
+}
+
+.tool-tile-link:focus-visible {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 3px;
+}
+
 /* Settings */
 .settings-row {
   display: flex;
@@ -2098,6 +2116,19 @@ input.player-name:disabled {
 
 .timer-settings-fab:hover {
   opacity: 1;
+}
+
+.timer-page-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  z-index: 10001;
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  padding: 0 12px;
+  pointer-events: none;
 }
 
 .timer-setting {

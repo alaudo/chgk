@@ -41,7 +41,7 @@ A single-page HTML application for managing random team assignments with captain
 
 1. **Open the Application**
    - When captain is selected, enter a team name (e.g., "Red Team", "Alpha Squad")
-   - Open `index.html` in any modern web browser
+   - Open `index.html` in any modern web browser (tool launcher)
    - No server or installation required
 
 2. **Add Players**
@@ -175,7 +175,8 @@ Where:
 
 ### Files Structure
 
-- `index.html` - Main HTML structure
+- `index.html` - Tool launcher (links to the three tools)
+- `peremeshki.html` - "Перемешки" (random teams + scoring)
 - `styles.css` - Styling and responsive design
 - `storage.js` - localStorage persistence with debouncing
 - `algorithms.js` - Team generation and reshuffle logic
