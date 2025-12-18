@@ -1004,6 +1004,13 @@ input.player-name:disabled {
   background: #f0fdf4;
 }
 
+.scoring-table .score-details {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 .scoring-table tbody .team-row-1 .question-cell,
 .scoring-table tbody .team-row-1 .team-name {
   background: #eff6ff !important;
@@ -2020,6 +2027,18 @@ input.player-name:disabled {
   padding: 15px;
   color: white;
   min-width: 220px;
+}
+
+/* Make preset buttons readable on the dark timer panel */
+.timer-settings-panel .btn-small {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: none;
+}
+
+.timer-settings-panel .btn-small:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .timer-settings-panel.collapsed {

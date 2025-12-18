@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ЧГК: Турнир (команды)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🦉 ЧГК: Турнир</h1>
+      <p class="subtitle">Ввод команд и учёт очков по турам</p>
+      <button class="help-btn" onclick="openHelp()" title="Помощь">❓</button>
+    </header>
+
+    <div id="warningContainer" class="warning-container"></div>
+
+    <div class="main-content">
+      <!-- Teams Section -->
+      <section class="section" id="teamsSection">
+        <div class="section-header">
+          <h2>Команды</h2>
+          <button class="collapse-btn" onclick="toggleSection('teamsSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div class="player-input">
+            <input type="text" id="teamNameInput" placeholder="Название команды" class="input">
+            <input type="color" id="teamColorInput" value="#3b82f6" class="color-input" title="Цвет команды">
+            <button id="addTeamBtn" class="btn btn-primary">Добавить</button>
+          </div>
+          <div id="teamsList" class="players-list"></div>
+        </div>
+      </section>
+
+      <!-- Settings / Round -->
+      <section id="currentRoundSection" class="section">
+        <div class="section-header">
+          <h2 id="currentRoundTitle">Текущий тур</h2>
+          <button class="collapse-btn" onclick="toggleSection('currentRoundSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div id="gameInfo" class="game-info"></div>
+          <div class="round-header-bar">
+            <div class="round-header-actions">
+              <div class="settings-row" style="margin-bottom:0;">
+                <label for="questionsPerRound">Вопросов в туре:</label>
+                <input type="number" id="questionsPerRound" min="1" max="50" value="12" class="input-small">
+              </div>
+              <div class="settings-row" style="margin-bottom:0;">
+                <label for="gameRoundsInput">Туров в игре:</label>
+                <input type="number" id="gameRoundsInput" min="1" max="50" value="5" class="input-small">
+                <button id="startGameBtn" class="btn btn-secondary btn-small">🎮 Начать игру</button>
+              </div>
+              <button id="questionTimerBtn" class="btn btn-primary btn-small" style="display:none;">⏱️ Вопрос</button>
+            </div>
+          </div>
+
+          <div id="currentRoundContainer" class="current-round-container"></div>
+          <div class="actions" id="roundActions">
+            <button id="startRoundBtn" class="btn btn-primary">Начать тур</button>
+            <button id="finalizeRoundBtn" class="btn btn-success" style="display:none;">Завершить тур</button>
+            <button id="saveEditedRoundBtn" class="btn btn-success" style="display:none;">Сохранить изменения</button>
+            <button id="cancelEditRoundBtn" class="btn btn-secondary" style="display:none;">Отмена</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section class="section" id="historySection">
+        <div class="section-header">
+          <h2>История туров</h2>
+          <button class="collapse-btn" onclick="toggleSection('historySection')">−</button>
+        </div>
+        <div class="section-body">
+          <div id="roundsHistory" class="rounds-history"></div>
+        </div>
+      </section>
+
+      <!-- Leaderboard -->
+      <section class="section" id="leaderboardSection">
+        <div class="section-header">
+          <h2>📊 Результаты</h2>
+          <button class="collapse-btn" onclick="toggleSection('leaderboardSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div id="leaderboard" class="leaderboard"></div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="section" id="actionsSection">
+        <div class="section-header">
+          <h2>Действия</h2>
+          <button class="collapse-btn" onclick="toggleSection('actionsSection')">−</button>
+        </div>
+        <div class="section-body">
+          <div class="actions">
+            <button id="resetRoundsBtn" class="btn btn-warning">Сбросить туры (оставить команды)</button>
+            <button id="exportBtn" class="btn btn-secondary">Экспорт</button>
+            <button id="importBtn" class="btn btn-secondary">Импорт</button>
+            <button id="exportGameTsvBtn" class="btn btn-secondary">Экспорт игры (TSV)</button>
+            <button id="exportGameTsvTransposeBtn" class="btn btn-secondary">Экспорт игры (TSV, транспонир.)</button>
+            <button id="resetBtn" class="btn btn-danger">Полный сброс</button>
+            <input type="file" id="importFile" accept=".json" style="display:none;">
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <p>Команды и таймер | данные хранятся локально в браузере.</p>
+    </footer>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal-overlay" id="helpModal" style="display:none;" onclick="closeHelp()">
+    <div class="modal-content help-modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📖 Инструкция</h2>
+        <button class="modal-close" onclick="closeHelp()">&times;</button>
+      </div>
+      <div class="modal-body help-modal-body">
+        <section class="help-section">
+          <h3>🚀 Быстрый старт</h3>
+          <ol>
+            <li>Добавьте команды (название + цвет).</li>
+            <li>Нажмите «Начать тур».</li>
+            <li>Отмечайте правильные ответы по вопросам (чекбоксы).</li>
+            <li>Нажмите «Завершить тур» — тур попадёт в историю, а следующий откроется автоматически.</li>
+          </ol>
+        </section>
+        <section class="help-section">
+          <h3>⏱️ Таймер</h3>
+          <ul>
+            <li><strong>Пробел</strong> — старт/пауза/продолжить</li>
+            <li><strong>Enter</strong> — следующий вопрос</li>
+            <li><strong>Esc</strong> — закрыть</li>
+          </ul>
+        </section>
+        <section class="help-section">
+          <h3>💾 Данные</h3>
+          <ul>
+            <li>Сохраняются автоматически в браузере.</li>
+            <li>Экспорт/импорт — резервная копия и перенос.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="chgk.js"></script>
+</body>
+</html>
