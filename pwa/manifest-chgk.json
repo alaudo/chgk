@@ -1,0 +1,19 @@
+{
+  "name": "CHGK: Tournament",
+  "short_name": "Tournament",
+  "description": "Teams-only tournament scoring and exports.",
+  "id": "/chgk.html",
+  "start_url": "./chgk.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "../img/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

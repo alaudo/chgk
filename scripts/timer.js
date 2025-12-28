@@ -501,7 +501,7 @@
               <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                 <button id="preset6010Btn" class="btn btn-secondary btn-small" type="button">60/10</button>
                 <button id="preset3010Btn" class="btn btn-secondary btn-small" type="button">30/10</button>
-                <button id="preset2019Btn" class="btn btn-secondary btn-small" type="button">20/19</button>
+                <button id="preset2010Btn" class="btn btn-secondary btn-small" type="button">20/10</button>
               </div>
             </div>
 
@@ -587,8 +587,8 @@
       .getElementById("preset3010Btn")
       ?.addEventListener("click", () => applyPreset(30, 10));
     document
-      .getElementById("preset2019Btn")
-      ?.addEventListener("click", () => applyPreset(20, 19));
+      .getElementById("preset2010Btn")
+      ?.addEventListener("click", () => applyPreset(20, 10));
 
     updateTimerDisplay();
   }

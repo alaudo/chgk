@@ -25,6 +25,8 @@ python -m http.server 8000
 
 Then open `http://localhost:8000/`.
 
+Note: **PWA installation requires HTTPS or localhost**. Opening the files via `file://` will work for basic usage, but service workers (offline + install) will not.
+
 ### 2) Peremeshka (peremeshki.html) — Quick start
 
 1. Add players. Mark captains — for captains you set a **team name** and **team color**.
@@ -88,9 +90,25 @@ Hotkeys (in the in-app timer):
 - `styles.css` — shared styles.
 - `scripts/` — all JavaScript.
 - `img/` — images (icons + help screenshots).
+- `pwa/` — PWA manifests.
 
 ## Data & persistence
 
 - All data is stored locally in the browser via `localStorage`.
 - Reloading the page is safe; clearing browser storage will remove the saved game.
 - Use export/import buttons (where available) for backups.
+
+## PWA (Install as an app)
+
+Each page ships with its own manifest, so you can install:
+
+- the full launcher (`index.html`), or
+- a single tool (Peremeshka / Tournament / Timer).
+
+How to install (Chrome / Edge):
+
+1. Serve the folder via `http://localhost/...` (see Quick Start).
+2. Open the page you want to install.
+3. Use the browser’s **Install app** action (or the install icon in the address bar).
+
+Offline support is provided by a service worker that caches the static assets.

@@ -1,0 +1,19 @@
+{
+  "name": "CHGK: Timer",
+  "short_name": "Timer",
+  "description": "Fullscreen CHGK question timer (main + overtime) with presets.",
+  "id": "/timer.html",
+  "start_url": "./timer.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "../img/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
