@@ -25,7 +25,7 @@
       </nav>
       <div class="header-body">
         <p class="subtitle">Генератор случайных команд и учёта очков</p>
-        <img class="page-main-image" src="peremeshki.png" alt="ЧГК: Перемешка">
+        <img class="page-main-image" src="img/peremeshki.png" alt="ЧГК: Перемешка">
       </div>
     </header>
 
@@ -84,7 +84,7 @@
           </div>
             <div class="settings-row">
               <label for="gameRoundsInput">Туров в игре:</label>
-              <input type="number" id="gameRoundsInput" min="1" max="50" value="5" class="input-small">
+              <input type="number" id="gameRoundsInput" min="1" max="50" value="3" class="input-small">
             </div>
           <div class="settings-row">
             <label class="checkbox-label">
@@ -330,12 +330,12 @@
   </div>
 
   <!-- Scripts -->
-  <script src="imageViewer.js"></script>
-  <script src="footer.js"></script>
-  <script src="storage.js"></script>
-  <script src="algorithms.js"></script>
-  <script src="app.js"></script>
-  <script src="ui.js"></script>
+  <script src="scripts/imageViewer.js"></script>
+  <script src="scripts/footer.js"></script>
+  <script src="scripts/storage.js"></script>
+  <script src="scripts/algorithms.js"></script>
+  <script src="scripts/app.js"></script>
+  <script src="scripts/ui.js"></script>
   <script>
     // Initialize app on page load
     document.addEventListener('DOMContentLoaded', () => {
@@ -343,7 +343,7 @@
       
       // Restore form values
       document.getElementById('questionsPerRound').value = appState.settings.questionsPerRound || 12;
-      document.getElementById('gameRoundsInput').value = appState.settings.gameRounds || 5;
+      document.getElementById('gameRoundsInput').value = appState.settings.gameRounds || 3;
       
       // Restore checkbox states
       if (document.getElementById('hideCaptainsCheck')) {

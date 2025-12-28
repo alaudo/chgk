@@ -6,19 +6,19 @@ class AppState {
     this.rounds = [];
     this.currentRoundId = null;
     this.editingRoundId = null;
-    this.currentView = "teams"; // 'teams' or 'scoring'
+    this.currentView = 'teams'; // 'teams' or 'scoring'
     this.settings = {
       allowUnevenTeams: true,
       variabilityWeight: 1.0,
       questionsPerRound: 12,
       gameRounds: 3,
-      hideCaptains: false,
+      hideCaptains: false
     };
     // UI state for persistence
     this.uiState = {
-      leaderboardTab: "players",
-      leaderboardSort: { by: "correctAnswers", direction: "desc" },
-      allowManualMove: false,
+      leaderboardTab: 'players',
+      leaderboardSort: { by: 'correctAnswers', direction: 'desc' },
+      allowManualMove: false
     };
     this.undoSnapshot = null;
     // Game mode state
@@ -45,7 +45,7 @@ class AppState {
       currentView: this.currentView,
       currentRoundId: this.currentRoundId,
       editingRoundId: this.editingRoundId,
-      uiState: this.uiState,
+      uiState: this.uiState
     };
   }
 
@@ -61,68 +61,62 @@ class AppState {
       variabilityWeight: 1.0,
       questionsPerRound: 12,
       gameRounds: 3,
-      ...saved.settings,
+      ...saved.settings
     };
     this.gameId = saved.gameId || null;
     this.gameRounds = saved.gameRounds || [];
     this.currentGameRoundIndex = saved.currentGameRoundIndex || 0;
     this.currentQuestionNumber = saved.currentQuestionNumber || 1;
-    this.currentView = saved.currentView || "teams";
+    this.currentView = saved.currentView || 'teams';
     this.currentRoundId = saved.currentRoundId || null;
     this.editingRoundId = saved.editingRoundId || null;
     this.uiState = {
-      leaderboardTab: "players",
-      leaderboardSort: { by: "correctAnswers", direction: "desc" },
+      leaderboardTab: 'players',
+      leaderboardSort: { by: 'correctAnswers', direction: 'desc' },
       allowManualMove: false,
-      ...saved.uiState,
+      ...saved.uiState
     };
-
+    
     // Restore active game state if there's an ongoing game
     if (this.gameId && this.gameRounds.length > 0) {
       this.restoreActiveGameState();
     }
 
     // Legacy fallback: if we have rounds but no active round ID, assume the last round is active.
-    if (
-      !this.currentRoundId &&
-      Array.isArray(this.rounds) &&
-      this.rounds.length > 0
-    ) {
+    if (!this.currentRoundId && Array.isArray(this.rounds) && this.rounds.length > 0) {
       const lastRound = this.rounds[this.rounds.length - 1];
       if (lastRound && lastRound.id) {
         this.currentRoundId = lastRound.id;
       }
     }
-
+    
     // Ensure we have a consistent state after loading
     if (this.currentRoundId) {
-      const round = this.rounds.find((r) => r.id === this.currentRoundId);
+      const round = this.rounds.find(r => r.id === this.currentRoundId);
       if (round) {
         // We have an active round, make sure we're ready to display it
         this.ensureRoundQuestionsInitialized(round);
       } else if (this.isGameMode()) {
         // Current round ID exists but round not found - this shouldn't happen after restoration
-        console.warn(
-          "Current round ID exists but round not found in rounds array"
-        );
+        console.warn('Current round ID exists but round not found in rounds array');
         // Try to restore it one more time
         this.restoreActiveGameState();
       }
     }
-
+    
     // Sync game rounds with completed rounds for proper display
     this.syncGameRoundsWithCompletedRounds();
-
+    
     // Migrate old player data
-    this.players.forEach((player) => {
+    this.players.forEach(player => {
       if (!player.questionHistory) {
         player.questionHistory = [];
       }
       if (player.teamName === undefined) {
-        player.teamName = "";
+        player.teamName = '';
       }
       if (player.teamColor === undefined) {
-        player.teamColor = player.isCaptain ? "#3b82f6" : null;
+        player.teamColor = player.isCaptain ? '#3b82f6' : null;
       }
     });
   }
@@ -144,15 +138,11 @@ class AppState {
   restoreActiveGameState() {
     // Ensure all completed game rounds (up to current index) are in the rounds array
     if (this.gameRounds.length > 0) {
-      for (
-        let i = 0;
-        i <= this.currentGameRoundIndex && i < this.gameRounds.length;
-        i++
-      ) {
+      for (let i = 0; i <= this.currentGameRoundIndex && i < this.gameRounds.length; i++) {
         const gameRound = this.gameRounds[i];
         if (gameRound) {
           // Check if this round exists in rounds array
-          const existingRound = this.rounds.find((r) => r.id === gameRound.id);
+          const existingRound = this.rounds.find(r => r.id === gameRound.id);
           if (!existingRound) {
             // Round not in rounds array, add it
             this.ensureRoundQuestionsInitialized(gameRound);
@@ -164,7 +154,7 @@ class AppState {
           }
         }
       }
-
+      
       // Always ensure current round ID is set correctly for the current game round index
       if (this.currentGameRoundIndex < this.gameRounds.length) {
         const currentGameRound = this.gameRounds[this.currentGameRoundIndex];
@@ -173,11 +163,9 @@ class AppState {
           if (this.currentRoundId !== currentGameRound.id) {
             this.currentRoundId = currentGameRound.id;
           }
-
+          
           // Ensure this round is in the rounds array
-          const currentRound = this.rounds.find(
-            (r) => r.id === this.currentRoundId
-          );
+          const currentRound = this.rounds.find(r => r.id === this.currentRoundId);
           if (!currentRound) {
             this.ensureRoundQuestionsInitialized(currentGameRound);
             this.rounds.push(currentGameRound);
@@ -192,10 +180,10 @@ class AppState {
    */
   syncGameRoundsWithCompletedRounds() {
     if (!this.isGameMode()) return;
-
+    
     // Update gameRounds with any progress from completed rounds
     this.gameRounds.forEach((gameRound, index) => {
-      const completedRound = this.rounds.find((r) => r.id === gameRound.id);
+      const completedRound = this.rounds.find(r => r.id === gameRound.id);
       if (completedRound) {
         // Preserve the original game round structure but update with completed data
         gameRound.questions = completedRound.questions || gameRound.questions;
@@ -214,12 +202,11 @@ class AppState {
     if (!round.scores) {
       round.scores = {};
     }
-
-    const questionsPerRound =
-      round.questionsCount || this.settings.questionsPerRound;
-
+    
+    const questionsPerRound = round.questionsCount || this.settings.questionsPerRound;
+    
     // Initialize questions for each team if not already done
-    round.teams.forEach((team) => {
+    round.teams.forEach(team => {
       if (!round.questions[team.id]) {
         round.questions[team.id] = new Array(questionsPerRound).fill(false);
       }
@@ -232,20 +219,20 @@ class AppState {
   /**
    * Add a new player
    */
-  addPlayer(name, isCaptain = false, teamName = "") {
+  addPlayer(name, isCaptain = false, teamName = '') {
     const player = {
       id: `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: name.trim(),
       isCaptain: isCaptain,
       teamName: teamName.trim(),
-      teamColor: isCaptain ? "#3b82f6" : null, // Default blue for captains
+      teamColor: isCaptain ? '#3b82f6' : null, // Default blue for captains
       rating: 0,
       active: true,
       roundsPlayed: 0,
       totalScore: 0,
-      questionHistory: [], // { roundId, roundIndex, teamId, questionIndex, correct }
+      questionHistory: [] // { roundId, roundIndex, teamId, questionIndex, correct }
     };
-
+    
     this.players.push(player);
     this.save();
     return player;
@@ -255,7 +242,7 @@ class AppState {
    * Update player properties
    */
   updatePlayer(playerId, updates) {
-    const player = this.players.find((p) => p.id === playerId);
+    const player = this.players.find(p => p.id === playerId);
     if (player) {
       Object.assign(player, updates);
       this.save();
@@ -267,24 +254,23 @@ class AppState {
    */
   updatePlayerName(playerId, newName) {
     const trimmedName = newName.trim();
-
+    
     if (!trimmedName) {
-      throw new Error("Player name cannot be empty");
+      throw new Error('Player name cannot be empty');
     }
 
     // Check for duplicate names (excluding the current player)
-    const duplicateExists = this.players.some(
-      (p) =>
-        p.id !== playerId && p.name.toLowerCase() === trimmedName.toLowerCase()
+    const duplicateExists = this.players.some(p => 
+      p.id !== playerId && p.name.toLowerCase() === trimmedName.toLowerCase()
     );
-
+    
     if (duplicateExists) {
       throw new Error(`A player with the name "${trimmedName}" already exists`);
     }
 
-    const player = this.players.find((p) => p.id === playerId);
+    const player = this.players.find(p => p.id === playerId);
     if (!player) {
-      throw new Error("Player not found");
+      throw new Error('Player not found');
     }
 
     player.name = trimmedName;
@@ -296,7 +282,7 @@ class AppState {
    * Delete a player
    */
   deletePlayer(playerId) {
-    this.players = this.players.filter((p) => p.id !== playerId);
+    this.players = this.players.filter(p => p.id !== playerId);
     this.save();
   }
 
@@ -304,21 +290,21 @@ class AppState {
    * Get active players
    */
   getActivePlayers() {
-    return this.players.filter((p) => p.active);
+    return this.players.filter(p => p.active);
   }
 
   /**
    * Get captains
    */
   getCaptains() {
-    return this.players.filter((p) => p.active && p.isCaptain);
+    return this.players.filter(p => p.active && p.isCaptain);
   }
 
   /**
    * Get non-captains
    */
   getNonCaptains() {
-    return this.players.filter((p) => p.active && !p.isCaptain);
+    return this.players.filter(p => p.active && !p.isCaptain);
   }
 
   /**
@@ -329,15 +315,15 @@ class AppState {
     const nonCaptains = this.getNonCaptains();
 
     if (captains.length === 0) {
-      throw new Error("At least one captain is required to form teams");
+      throw new Error('At least one captain is required to form teams');
     }
 
-    const captainIds = captains.map((c) => c.id);
+    const captainIds = captains.map(c => c.id);
     const teams = generateTeams(captainIds, nonCaptains, this.settings);
 
     // Apply team names and colors from captains
-    teams.forEach((team) => {
-      const captain = captains.find((c) => c.id === team.captainId);
+    teams.forEach(team => {
+      const captain = captains.find(c => c.id === team.captainId);
       if (captain && captain.teamName) {
         team.label = captain.teamName;
       }
@@ -345,7 +331,7 @@ class AppState {
         team.color = captain.teamColor;
       } else if (captain) {
         // Set default color if captain doesn't have one
-        team.color = captain.teamColor || "#3b82f6";
+        team.color = captain.teamColor || '#3b82f6';
       }
     });
 
@@ -358,11 +344,11 @@ class AppState {
       teams: teams,
       scores: {},
       questions: {}, // teamId -> array of boolean (correct/incorrect)
-      questionsCount: questionsPerRound,
+      questionsCount: questionsPerRound
     };
 
     // Initialize questions grid
-    teams.forEach((team) => {
+    teams.forEach(team => {
       round.questions[team.id] = new Array(questionsPerRound).fill(false);
     });
 
@@ -378,28 +364,23 @@ class AppState {
    */
   reshuffleCurrentRound() {
     if (!this.currentRoundId) {
-      throw new Error("No active round to reshuffle");
+      throw new Error('No active round to reshuffle');
     }
 
-    const round = this.rounds.find((r) => r.id === this.currentRoundId);
+    const round = this.rounds.find(r => r.id === this.currentRoundId);
     if (!round) {
-      throw new Error("Current round not found");
+      throw new Error('Current round not found');
     }
 
-    const allPlayerIds = this.players.map((p) => p.id);
+    const allPlayerIds = this.players.map(p => p.id);
     const penaltyMatrix = computePenaltyMatrix(
-      this.rounds.filter((r) => r.id !== this.currentRoundId), // Exclude current round
+      this.rounds.filter(r => r.id !== this.currentRoundId), // Exclude current round
       allPlayerIds
     );
 
     const nonCaptains = this.getNonCaptains();
-    round.teams = reshuffleTeams(
-      round.teams,
-      nonCaptains,
-      penaltyMatrix,
-      this.settings
-    );
-
+    round.teams = reshuffleTeams(round.teams, nonCaptains, penaltyMatrix, this.settings);
+    
     this.save();
     return round;
   }
@@ -409,34 +390,34 @@ class AppState {
    */
   movePlayer(playerId, fromTeamId, toTeamId) {
     if (!this.currentRoundId) {
-      throw new Error("No active round");
+      throw new Error('No active round');
     }
 
-    const round = this.rounds.find((r) => r.id === this.currentRoundId);
+    const round = this.rounds.find(r => r.id === this.currentRoundId);
     if (!round) {
-      throw new Error("Current round not found");
+      throw new Error('Current round not found');
     }
 
-    const player = this.players.find((p) => p.id === playerId);
-    const fromTeam = round.teams.find((t) => t.id === fromTeamId);
-    const toTeam = round.teams.find((t) => t.id === toTeamId);
+    const player = this.players.find(p => p.id === playerId);
+    const fromTeam = round.teams.find(t => t.id === fromTeamId);
+    const toTeam = round.teams.find(t => t.id === toTeamId);
 
     if (!fromTeam || !toTeam) {
-      throw new Error("Team not found");
+      throw new Error('Team not found');
     }
 
     // Check if player is a captain
     if (player.isCaptain && fromTeam.captainId === playerId) {
-      throw new Error("Cannot move captain from their team");
+      throw new Error('Cannot move captain from their team');
     }
 
     // Check if destination team would have two captains
     if (player.isCaptain && toTeam.captainId) {
-      throw new Error("Destination team already has a captain");
+      throw new Error('Destination team already has a captain');
     }
 
     // Remove from source team
-    fromTeam.playerIds = fromTeam.playerIds.filter((id) => id !== playerId);
+    fromTeam.playerIds = fromTeam.playerIds.filter(id => id !== playerId);
 
     // Add to destination team
     toTeam.playerIds.push(playerId);
@@ -449,27 +430,25 @@ class AppState {
    */
   updateTeamQuestions(teamId, questions) {
     if (!this.currentRoundId) {
-      throw new Error("No active round");
+      throw new Error('No active round');
     }
 
-    const round = this.rounds.find((r) => r.id === this.currentRoundId);
+    const round = this.rounds.find(r => r.id === this.currentRoundId);
     if (!round) {
-      throw new Error("Current round not found");
+      throw new Error('Current round not found');
     }
 
     round.questions[teamId] = questions;
-
+    
     // Also update the corresponding game round if in game mode
     if (this.isGameMode()) {
-      const gameRound = this.gameRounds.find(
-        (r) => r.id === this.currentRoundId
-      );
+      const gameRound = this.gameRounds.find(r => r.id === this.currentRoundId);
       if (gameRound) {
         if (!gameRound.questions) gameRound.questions = {};
         gameRound.questions[teamId] = questions;
       }
     }
-
+    
     this.save();
   }
 
@@ -478,24 +457,24 @@ class AppState {
    */
   applyRoundScores() {
     if (!this.currentRoundId) {
-      throw new Error("No active round");
+      throw new Error('No active round');
     }
 
-    const round = this.rounds.find((r) => r.id === this.currentRoundId);
+    const round = this.rounds.find(r => r.id === this.currentRoundId);
     if (!round) {
-      throw new Error("Current round not found");
+      throw new Error('Current round not found');
     }
 
     // Save snapshot for undo
     this.undoSnapshot = {
       players: JSON.parse(JSON.stringify(this.players)),
-      round: JSON.parse(JSON.stringify(round)),
+      round: JSON.parse(JSON.stringify(round))
     };
 
     // Calculate scores from questions
-    round.teams.forEach((team) => {
+    round.teams.forEach(team => {
       const questions = round.questions[team.id] || [];
-      const score = questions.filter((q) => q).length; // Count correct answers
+      const score = questions.filter(q => q).length; // Count correct answers
       round.scores[team.id] = score;
     });
 
@@ -511,10 +490,10 @@ class AppState {
    */
   updateRatings(round) {
     // Update rounds played and total score
-    round.teams.forEach((team) => {
+    round.teams.forEach(team => {
       const teamScore = round.scores[team.id] || 0;
-      team.playerIds.forEach((playerId) => {
-        const player = this.players.find((p) => p.id === playerId);
+      team.playerIds.forEach(playerId => {
+        const player = this.players.find(p => p.id === playerId);
         if (player) {
           player.roundsPlayed = (player.roundsPlayed || 0) + 1;
           player.totalScore = (player.totalScore || 0) + teamScore;
@@ -533,16 +512,16 @@ class AppState {
    * Update question history for all players in the round
    */
   updateQuestionHistory(round) {
-    round.teams.forEach((team) => {
+    round.teams.forEach(team => {
       const questions = round.questions[team.id] || [];
-
-      team.playerIds.forEach((playerId) => {
-        const player = this.players.find((p) => p.id === playerId);
+      
+      team.playerIds.forEach(playerId => {
+        const player = this.players.find(p => p.id === playerId);
         if (player) {
           if (!player.questionHistory) {
             player.questionHistory = [];
           }
-
+          
           // Add each question result to player history
           questions.forEach((correct, questionIndex) => {
             player.questionHistory.push({
@@ -551,7 +530,7 @@ class AppState {
               teamId: team.id,
               teamLabel: team.label,
               questionIndex: questionIndex + 1,
-              correct: correct,
+              correct: correct
             });
           });
         }
@@ -564,7 +543,7 @@ class AppState {
    * Rating = sum of (for each correct answer, count of other team players who got it wrong)
    */
   recalculateAllRatings() {
-    this.players.forEach((player) => {
+    this.players.forEach(player => {
       if (!player.questionHistory || player.questionHistory.length === 0) {
         player.rating = 0;
         return;
@@ -573,16 +552,16 @@ class AppState {
       let rating = 0;
 
       // For each question this player answered correctly
-      const correctAnswers = player.questionHistory.filter((q) => q.correct);
-
-      correctAnswers.forEach((answer) => {
+      const correctAnswers = player.questionHistory.filter(q => q.correct);
+      
+      correctAnswers.forEach(answer => {
         // Find the round
-        const round = this.rounds.find((r) => r.id === answer.roundId);
+        const round = this.rounds.find(r => r.id === answer.roundId);
         if (!round) return;
 
         // Count teams who got this question wrong
         let incorrectTeamsCount = 0;
-        round.teams.forEach((team) => {
+        round.teams.forEach(team => {
           const teamQuestions = round.questions[team.id] || [];
           const teamGotItRight = teamQuestions[answer.questionIndex] || false;
           if (!teamGotItRight) {
@@ -605,25 +584,20 @@ class AppState {
     const nonCaptains = this.getNonCaptains();
 
     if (captains.length === 0) {
-      throw new Error("At least one captain is required to start a game");
+      throw new Error('At least one captain is required to start a game');
     }
 
     if (numRounds < 1 || numRounds > 50) {
-      throw new Error("Number of rounds must be between 1 and 50");
+      throw new Error('Number of rounds must be between 1 and 50');
     }
 
-    const captainIds = captains.map((c) => c.id);
-    const allRounds = generateGameRounds(
-      numRounds,
-      captainIds,
-      nonCaptains,
-      this.settings
-    );
+    const captainIds = captains.map(c => c.id);
+    const allRounds = generateGameRounds(numRounds, captainIds, nonCaptains, this.settings);
 
     // Apply team names and colors from captains
-    allRounds.forEach((round) => {
-      round.teams.forEach((team) => {
-        const captain = captains.find((c) => c.id === team.captainId);
+    allRounds.forEach(round => {
+      round.teams.forEach(team => {
+        const captain = captains.find(c => c.id === team.captainId);
         if (captain && captain.teamName) {
           team.label = captain.teamName;
         }
@@ -631,29 +605,29 @@ class AppState {
           team.color = captain.teamColor;
         } else if (captain) {
           // Set default color if captain doesn't have one
-          team.color = captain.teamColor || "#3b82f6";
+          team.color = captain.teamColor || '#3b82f6';
         }
       });
     });
 
     // Reset round history and all player statistics for new game
     this.rounds = [];
-    this.players.forEach((player) => {
+    this.players.forEach(player => {
       player.rating = 0;
       player.roundsPlayed = 0;
       player.totalScore = 0;
       player.questionHistory = [];
     });
-
+    
     this.gameId = `game-${Date.now()}`;
     this.gameRounds = allRounds;
     this.currentGameRoundIndex = 0;
-
+    
     // Set the first round as current
     const firstRound = this.gameRounds[0];
     this.currentRoundId = firstRound.id;
     this.rounds.push(firstRound);
-
+    
     this.save();
     return firstRound;
   }
@@ -675,7 +649,7 @@ class AppState {
     return {
       currentRound: this.currentGameRoundIndex + 1,
       totalRounds: this.gameRounds.length,
-      isLastRound: this.currentGameRoundIndex >= this.gameRounds.length - 1,
+      isLastRound: this.currentGameRoundIndex >= this.gameRounds.length - 1
     };
   }
 
@@ -684,14 +658,14 @@ class AppState {
    */
   finalizeRound() {
     this.applyRoundScores();
-
+    
     // If in game mode, advance to next round
     if (this.isGameMode()) {
       // Sync current round progress before advancing
       this.syncGameRoundsWithCompletedRounds();
-
+      
       this.currentGameRoundIndex++;
-
+      
       if (this.currentGameRoundIndex < this.gameRounds.length) {
         // Load next pre-generated round
         const nextRound = this.gameRounds[this.currentGameRoundIndex];
@@ -706,7 +680,7 @@ class AppState {
     } else {
       this.currentRoundId = null;
     }
-
+    
     this.save();
   }
 
@@ -724,19 +698,19 @@ class AppState {
    * Edit a past round (temporarily set as editing)
    */
   editRound(roundId) {
-    const round = this.rounds.find((r) => r.id === roundId);
+    const round = this.rounds.find(r => r.id === roundId);
     if (!round) {
-      throw new Error("Round not found");
+      throw new Error('Round not found');
     }
 
     if (this.editingRoundId) {
-      throw new Error("Already editing a round");
+      throw new Error('Already editing a round');
     }
 
     // Save snapshot before editing
     this.undoSnapshot = {
       players: JSON.parse(JSON.stringify(this.players)),
-      round: JSON.parse(JSON.stringify(round)),
+      round: JSON.parse(JSON.stringify(round))
     };
 
     // If there is an active in-progress round, temporarily suspend it.
@@ -745,7 +719,7 @@ class AppState {
     if (this.currentRoundId && this.currentRoundId !== roundId) {
       this.suspendedRoundState = {
         currentRoundId: this.currentRoundId,
-        currentView: this.currentView,
+        currentView: this.currentView
       };
     } else {
       this.suspendedRoundState = null;
@@ -753,7 +727,7 @@ class AppState {
 
     this.editingRoundId = roundId;
     this.currentRoundId = roundId;
-    this.currentView = "scoring";
+    this.currentView = 'scoring';
     this.save();
   }
 
@@ -763,19 +737,19 @@ class AppState {
   saveEditedRound() {
     if (!this.editingRoundId) return;
 
-    const round = this.rounds.find((r) => r.id === this.editingRoundId);
+    const round = this.rounds.find(r => r.id === this.editingRoundId);
     if (round) {
       // Recalculate scores from questions
-      round.teams.forEach((team) => {
+      round.teams.forEach(team => {
         const questions = round.questions[team.id] || [];
-        round.scores[team.id] = questions.filter((q) => q).length;
+        round.scores[team.id] = questions.filter(q => q).length;
       });
 
       // Clear old question history for this round
-      this.players.forEach((player) => {
+      this.players.forEach(player => {
         if (player.questionHistory) {
           player.questionHistory = player.questionHistory.filter(
-            (q) => q.roundId !== this.editingRoundId
+            q => q.roundId !== this.editingRoundId
           );
         }
       });
@@ -794,8 +768,7 @@ class AppState {
     // Restore the suspended active round (if any)
     if (this.suspendedRoundState && this.suspendedRoundState.currentRoundId) {
       this.currentRoundId = this.suspendedRoundState.currentRoundId;
-      this.currentView =
-        this.suspendedRoundState.currentView || this.currentView;
+      this.currentView = this.suspendedRoundState.currentView || this.currentView;
     }
     this.suspendedRoundState = null;
     this.save();
@@ -806,19 +779,19 @@ class AppState {
    * Needed after editing a past round because updateRatings() is incremental.
    */
   recalculateTotalsFromRounds() {
-    this.players.forEach((player) => {
+    this.players.forEach(player => {
       player.roundsPlayed = 0;
       player.totalScore = 0;
     });
 
-    this.rounds.forEach((round) => {
+    this.rounds.forEach(round => {
       if (!round || !round.teams) return;
       if (Object.keys(round.scores || {}).length === 0) return;
 
-      round.teams.forEach((team) => {
+      round.teams.forEach(team => {
         const teamScore = round.scores[team.id] || 0;
-        (team.playerIds || []).forEach((playerId) => {
-          const player = this.players.find((p) => p.id === playerId);
+        (team.playerIds || []).forEach(playerId => {
+          const player = this.players.find(p => p.id === playerId);
           if (!player) return;
           player.roundsPlayed = (player.roundsPlayed || 0) + 1;
           player.totalScore = (player.totalScore || 0) + teamScore;
@@ -834,9 +807,7 @@ class AppState {
     if (this.undoSnapshot && this.editingRoundId) {
       // Restore from snapshot
       this.players = this.undoSnapshot.players;
-      const roundIndex = this.rounds.findIndex(
-        (r) => r.id === this.undoSnapshot.round.id
-      );
+      const roundIndex = this.rounds.findIndex(r => r.id === this.undoSnapshot.round.id);
       if (roundIndex !== -1) {
         this.rounds[roundIndex] = this.undoSnapshot.round;
       }
@@ -847,8 +818,7 @@ class AppState {
     // Restore the suspended active round (if any)
     if (this.suspendedRoundState && this.suspendedRoundState.currentRoundId) {
       this.currentRoundId = this.suspendedRoundState.currentRoundId;
-      this.currentView =
-        this.suspendedRoundState.currentView || this.currentView;
+      this.currentView = this.suspendedRoundState.currentView || this.currentView;
     }
     this.suspendedRoundState = null;
     this.save();
@@ -863,49 +833,46 @@ class AppState {
       if (this.rounds.length > 0) {
         const removedRound = this.rounds.pop();
         this.currentRoundId = null;
-
+        
         // Remove question history for this round
-        this.players.forEach((player) => {
+        this.players.forEach(player => {
           if (player.questionHistory) {
             player.questionHistory = player.questionHistory.filter(
-              (q) => q.roundId !== removedRound.id
+              q => q.roundId !== removedRound.id
             );
           }
         });
-
+        
         // Recalculate ratings
         this.recalculateAllRatings();
       }
     } else {
       // Restore from snapshot
       this.players = this.undoSnapshot.players;
-      const roundIndex = this.rounds.findIndex(
-        (r) => r.id === this.undoSnapshot.round.id
-      );
+      const roundIndex = this.rounds.findIndex(r => r.id === this.undoSnapshot.round.id);
       if (roundIndex !== -1) {
         this.rounds[roundIndex] = this.undoSnapshot.round;
       }
       this.undoSnapshot = null;
     }
-
+    
     this.save();
   }
 
   /**
    * Compute leaderboard
    */
-  computeLeaderboard(sortBy = "correctAnswers", sortDirection = "desc") {
+  computeLeaderboard(sortBy = 'correctAnswers', sortDirection = 'desc') {
     const leaderboard = this.players
-      .filter((p) => p.roundsPlayed > 0)
-      .map((player) => {
-        const captainRounds = this.rounds.filter((round) =>
-          round.teams.some((team) => team.captainId === player.id)
+      .filter(p => p.roundsPlayed > 0)
+      .map(player => {
+        const captainRounds = this.rounds.filter(round => 
+          round.teams.some(team => team.captainId === player.id)
         ).length;
 
         // Correct answers should align with team scores; use totalScore to avoid double counting
         const correctAnswers = player.totalScore || 0;
-        const avgPerRound =
-          player.roundsPlayed > 0 ? player.totalScore / player.roundsPlayed : 0;
+        const avgPerRound = player.roundsPlayed > 0 ? player.totalScore / player.roundsPlayed : 0;
 
         return {
           id: player.id,
@@ -916,38 +883,29 @@ class AppState {
           correctAnswers: correctAnswers,
           captainRounds: captainRounds,
           avgPerRound: avgPerRound,
-          isCaptain: player.isCaptain,
+          isCaptain: player.isCaptain
         };
       })
       .sort((a, b) => {
         // Primary sort by specified column
         let primarySort = 0;
-        if (sortBy === "name") {
-          primarySort =
-            sortDirection === "desc"
-              ? b.name.localeCompare(a.name)
-              : a.name.localeCompare(b.name);
+        if (sortBy === 'name') {
+          primarySort = sortDirection === 'desc' 
+            ? b.name.localeCompare(a.name)
+            : a.name.localeCompare(b.name);
         } else {
-          primarySort =
-            sortDirection === "desc"
-              ? b[sortBy] - a[sortBy]
-              : a[sortBy] - b[sortBy];
+          primarySort = sortDirection === 'desc' 
+            ? b[sortBy] - a[sortBy]
+            : a[sortBy] - b[sortBy];
         }
-
+        
         if (primarySort !== 0) return primarySort;
-
+        
         // Default tie-breaking: totalScore -> rating -> correctAnswers -> roundsPlayed -> name
-        if (sortBy !== "totalScore" && b.totalScore !== a.totalScore)
-          return b.totalScore - a.totalScore;
-        if (sortBy !== "rating" && b.rating !== a.rating)
-          return b.rating - a.rating;
-        if (
-          sortBy !== "correctAnswers" &&
-          b.correctAnswers !== a.correctAnswers
-        )
-          return b.correctAnswers - a.correctAnswers;
-        if (sortBy !== "roundsPlayed" && b.roundsPlayed !== a.roundsPlayed)
-          return b.roundsPlayed - a.roundsPlayed;
+        if (sortBy !== 'totalScore' && b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+        if (sortBy !== 'rating' && b.rating !== a.rating) return b.rating - a.rating;
+        if (sortBy !== 'correctAnswers' && b.correctAnswers !== a.correctAnswers) return b.correctAnswers - a.correctAnswers;
+        if (sortBy !== 'roundsPlayed' && b.roundsPlayed !== a.roundsPlayed) return b.roundsPlayed - a.roundsPlayed;
         return a.name.localeCompare(b.name);
       });
 
@@ -962,18 +920,18 @@ class AppState {
     this.currentRoundId = null;
     this.editingRoundId = null;
     this.undoSnapshot = null;
-
+    
     // End game mode
     this.endGame();
-
+    
     // Reset player stats
-    this.players.forEach((player) => {
+    this.players.forEach(player => {
       player.rating = 0;
       player.roundsPlayed = 0;
       player.totalScore = 0;
       player.questionHistory = [];
     });
-
+    
     this.save();
   }
 
@@ -984,7 +942,7 @@ class AppState {
     return exportState({
       players: this.players,
       rounds: this.rounds,
-      settings: this.settings,
+      settings: this.settings
     });
   }
 
@@ -1002,7 +960,7 @@ class AppState {
       saveStateImmediate({
         players: this.players,
         rounds: this.rounds,
-        settings: this.settings,
+        settings: this.settings
       });
       return true;
     }

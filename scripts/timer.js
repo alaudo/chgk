@@ -462,7 +462,7 @@
     mount.innerHTML = `
       <div class="modal-overlay fullscreen-modal" id="questionTimerModal" onclick="event.stopPropagation()">
         <div class="timer-modal-content">
-          <img class="timer-floating-owl" src="timer.png" alt="" aria-hidden="true" data-viewer-src="img/timer-1.jpg">
+          <img class="timer-floating-owl" src="img/timer.png" alt="" aria-hidden="true" data-viewer-src="img/timer-1.jpg">
           <nav class="header-nav header-nav--inverse" aria-label="Навигация">
             <a href="index.html">Инструменты</a>
             <span class="header-nav-sep">|</span>
