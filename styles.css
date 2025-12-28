@@ -959,6 +959,63 @@ input.player-name:disabled {
   font-size: 0.85rem;
 }
 
+.footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer a:hover {
+  text-decoration: none;
+}
+
+.footer-text {
+  margin: 0;
+}
+
+.footer-toggle {
+  display: none;
+  margin: 0 auto 10px auto;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.footer-toggle:hover {
+  border-color: var(--primary-color);
+}
+
+.footer-toggle:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .footer {
+    padding: 18px 0;
+  }
+
+  .footer-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hide the long notice on small screens by default */
+  .footer .footer-long {
+    display: none;
+  }
+
+  /* Show it when user expands */
+  .footer.footer-expanded .footer-long {
+    display: inline;
+  }
+}
+
 /* Launcher tiles (index.html) */
 .tool-tile-link {
   display: block;
@@ -2199,6 +2256,46 @@ body.image-viewer-open {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Fix: in the image viewer toolbar we use `btn btn-*- btn-small`.
+   `.btn-small` sets a white background, which can override variant backgrounds
+   (e.g. `.btn-secondary`) and make white text invisible. */
+.image-viewer-dialog .btn.btn-small {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.image-viewer-dialog .btn.btn-primary.btn-small {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: transparent;
+}
+
+.image-viewer-dialog .btn.btn-secondary.btn-small {
+  background: var(--secondary-color);
+  color: #fff;
+  border-color: transparent;
+}
+
+.image-viewer-dialog .btn.btn-success.btn-small {
+  background: var(--success-color);
+  color: #fff;
+  border-color: transparent;
+}
+
+.image-viewer-dialog .btn.btn-danger.btn-small {
+  background: var(--danger-color);
+  color: #fff;
+  border-color: transparent;
+}
+
+.image-viewer-dialog .btn.btn-secondary.btn-small:hover:not(:disabled) {
+  background: #475569;
+}
+
+.image-viewer-dialog .btn.btn-danger.btn-small:hover:not(:disabled) {
+  background: #b91c1c;
 }
 
 .image-viewer-zoom {

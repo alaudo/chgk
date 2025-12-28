@@ -74,8 +74,11 @@
     </section>
 
     <footer class="footer">
-      <p>ЧГК: Инструменты | (c) Alexander Galkin, Hamburg | Данные хранятся в локальном хранилище вашего браузера и не передаются на сервер</p>
+      <button type="button" class="footer-toggle" data-footer-toggle aria-expanded="false" aria-controls="footerText">Подробнее</button>
+      <p id="footerText" class="footer-text">ЧГК: Инструменты | (c) Alexander Galkin, Hamburg | <span class="footer-long" data-footer-long>Данные хранятся в локальном хранилище вашего браузера и не передаются на сервер</span> | Telegram: <a href="https://t.me/alaudo" target="_blank" rel="noopener noreferrer">@alaudo</a></p>
     </footer>
   </div>
+
+  <script src="footer.js"></script>
 </body>
 </html>
