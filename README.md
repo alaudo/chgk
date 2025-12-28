@@ -1,38 +1,96 @@
-# ЧГК: Набор инструментов
+# CHGK Tools (Static Web)
 
-Небольшой набор статических HTML-инструментов для проведения игр ЧГК: перемешка команд, классический турнир по командам и отдельный таймер.
+A small set of **static HTML tools** for running CHGK-style games:
 
-Открывается прямо в браузере (без сборки и без сервера), данные сохраняются в `localStorage`.
+- **Peremeshka**: players + captains → random teams, scoring, history, export/import.
+- **Tournament**: teams-only tournament workflow with per-question scoring and exports.
+- **Timer**: fullscreen question timer (60 + 10 style), presets, hotkeys.
 
-## Инструменты
+Everything runs in the browser (no build step). State is stored in `localStorage`.
 
-- `index.html` — стартовая страница-лаунчер.
-- `peremeshki.html` — «Перемешка» (игроки + капитаны → команды, очки по вопросам, история туров, экспорт/импорт).
-- `chgk.html` — «Турнир» (только команды: ввод команд, ведение туров, абсолютная нумерация вопросов, история и экспорт).
-- `timer.html` — полноэкранный таймер вопроса (пресеты, переход в доп. время, управление номером вопроса).
+Contact: Telegram **@alaudo** — [https://t.me/alaudo](https://t.me/alaudo)
 
-По умолчанию в режиме «Игра» выставлено `3` тура (можно менять в настройках).
+## Quick Start
 
-## Как запустить
+### 1) Launcher (index.html)
 
-1. Откройте `index.html` в браузере.
-2. Выберите нужный инструмент.
+1. Open `index.html` in any modern browser.
+2. Choose a tool: **Peremeshka**, **Tournament**, or **Timer**.
 
-Опционально (если удобнее через локальный сервер):
+Optional (if you prefer a local server):
 
-- `python -m http.server 8000` и затем откройте `http://localhost:8000/`.
+```bash
+python -m http.server 8000
+```
 
-## Структура проекта
+Then open `http://localhost:8000/`.
 
-- `styles.css` — общие стили.
-- `scripts/` — весь JavaScript.
-- `img/` — изображения (иконки на главной + скриншоты для справки внутри страниц).
+### 2) Peremeshka (peremeshki.html) — Quick start
 
-## Хранение данных
+1. Add players. Mark captains — for captains you set a **team name** and **team color**.
+2. Set **Questions per round** and **Rounds in game**, then click **Start new game** (or you can work without “Game mode” and just create teams + finish rounds).
+3. Click **Create new teams** for the initial draw, then **Reshuffle** to quickly get a new variant.
+4. If needed, enable **Allow manual move** and adjust rosters; enable **Hide captains** if captains are “technical”.
+5. In **Current round → Scoring**, mark correct answers per question. If everyone can see the screen, use the built‑in **Question timer**.
+6. Finish rounds to push them into history; results are recalculated automatically. Use **Export/Import** for backups.
 
-- Приложение хранит состояние в `localStorage` браузера.
-- Экспорт/импорт позволяет переносить состояние между компьютерами.
+### 3) Tournament (chgk.html) — Quick start
 
-## Контакты
+1. Add teams (optionally pick a color to match your paper sheets).
+2. Set **Questions per round** and **Rounds in game** (default is **3**, change anytime). If you need more rounds (e.g., a shootout), you can add extra rounds after the main game.
+3. If the screen is visible to everyone, open the built‑in **timer**: it moves question-by-question and lets you update scoring from inside.
+4. After the game, results are shown in the final table. Tie-breaking uses the accumulated **rating** (based on questions other teams missed).
+5. Save/export the game if needed.
 
-Telegram: `@alaudo`
+### 4) Timer (timer.html) — Quick start
+
+1. Open `timer.html`.
+2. Click **Start** to begin the main countdown; it switches into overtime automatically.
+3. Use **Previous/Next question** to change the question number.
+4. Open **Settings** (⚙) to select presets and tune timings.
+
+Hotkeys (in the in-app timer):
+
+- `Space` — start / pause / resume
+- `Enter` — next question
+- `Backspace` — previous question
+
+## Features (by tool)
+
+### Peremeshka (Random teams + scoring)
+
+- **Players & captains**: captains define teams; captains have **name + color**.
+- **Team generation**: random team building and quick reshuffle.
+- **Game mode**: pre-generates a fixed sequence of rounds for the whole game.
+- **Manual adjustments**: optional manual moves between teams.
+- **Scoring per question**: checkbox grid; totals update live.
+- **History & editing**: view finished rounds, edit past rounds and recalculate.
+- **Results**: players leaderboard, teams leaderboard, and “who played with whom” draw.
+- **Data management**: undo last round, reset rounds, export/import.
+
+### Tournament (Teams-only)
+
+- **Teams-only workflow**: enter teams, play rounds, keep full round history.
+- **Absolute question numbering**: convenient for a hosted tournament flow.
+- **Timer integration**: timer can be opened while scoring.
+- **Editing**: edit finished rounds, automatic recalculation.
+- **Exports**: TSV exports for spreadsheets.
+
+### Timer
+
+- Fullscreen question timer.
+- Main + overtime phase (CHGK-style).
+- Presets and configurable timings.
+- Question navigation and hotkeys.
+
+## Project structure
+
+- `styles.css` — shared styles.
+- `scripts/` — all JavaScript.
+- `img/` — images (icons + help screenshots).
+
+## Data & persistence
+
+- All data is stored locally in the browser via `localStorage`.
+- Reloading the page is safe; clearing browser storage will remove the saved game.
+- Use export/import buttons (where available) for backups.
